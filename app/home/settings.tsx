@@ -18,37 +18,43 @@ import {
   SegmentedButtons,
   TextInput,
   Chip,
-  useTheme
+  useTheme,
+  MD3Theme
 } from 'react-native-paper';
 import { navigateBack, navigateToHome, handleSignOut } from '../../utils/navigation';
 import { useAppTheme, useThemeMode } from '../../theme/ThemeProvider';
 
 // Define safe colors outside the component
-const createSafeColors = (appTheme) => ({
-  primary: appTheme?.colors?.primary || '#6200ee',
-  onPrimary: appTheme?.colors?.onPrimary || '#ffffff',
-  primaryContainer: appTheme?.colors?.primaryContainer || '#f1e4ff',
-  onPrimaryContainer: appTheme?.colors?.onPrimaryContainer || '#21005d',
-  secondary: appTheme?.colors?.secondary || '#03dac6',
-  onSecondary: appTheme?.colors?.onSecondary || '#ffffff',
-  secondaryContainer: appTheme?.colors?.secondaryContainer || '#d6f7f1',
-  onSecondaryContainer: appTheme?.colors?.onSecondaryContainer || '#003731',
-  tertiary: appTheme?.colors?.tertiary || '#ff8a00',
-  onTertiary: appTheme?.colors?.onTertiary || '#ffffff',
-  tertiaryContainer: appTheme?.colors?.tertiaryContainer || '#ffd9bc',
-  onTertiaryContainer: appTheme?.colors?.onTertiaryContainer || '#2a1700',
-  error: appTheme?.colors?.error || '#b00020',
-  onError: appTheme?.colors?.onError || '#ffffff',
-  surface: appTheme?.colors?.surface || '#ffffff',
-  onSurface: appTheme?.colors?.onSurface || '#121212',
-  background: appTheme?.colors?.background || '#f6f6f6',
-  onBackground: appTheme?.colors?.onBackground || '#121212',
-  surfaceVariant: appTheme?.colors?.surfaceVariant || '#f5f5f5',
-  onSurfaceVariant: appTheme?.colors?.onSurfaceVariant || '#6b6b6b',
-  outline: appTheme?.colors?.outline || '#79747e',
-  success: appTheme?.colors?.success || '#4caf50',
-  warning: appTheme?.colors?.warning || '#ff9800',
-});
+const createSafeColors = (appTheme: any) => {
+  // Log the appTheme structure for debugging
+  console.log('appTheme structure:', appTheme);
+  
+  return {
+    primary: appTheme?.theme?.colors?.primary || '#6200ee',
+    onPrimary: appTheme?.theme?.colors?.onPrimary || '#ffffff',
+    primaryContainer: appTheme?.theme?.colors?.primaryContainer || '#f1e4ff',
+    onPrimaryContainer: appTheme?.theme?.colors?.onPrimaryContainer || '#21005d',
+    secondary: appTheme?.theme?.colors?.secondary || '#03dac6',
+    onSecondary: appTheme?.theme?.colors?.onSecondary || '#ffffff',
+    secondaryContainer: appTheme?.theme?.colors?.secondaryContainer || '#d6f7f1',
+    onSecondaryContainer: appTheme?.theme?.colors?.onSecondaryContainer || '#003731',
+    tertiary: appTheme?.theme?.colors?.tertiary || '#ff8a00',
+    onTertiary: appTheme?.theme?.colors?.onTertiary || '#ffffff',
+    tertiaryContainer: appTheme?.theme?.colors?.tertiaryContainer || '#ffd9bc',
+    onTertiaryContainer: appTheme?.theme?.colors?.onTertiaryContainer || '#2a1700',
+    error: appTheme?.theme?.colors?.error || '#b00020',
+    onError: appTheme?.theme?.colors?.onError || '#ffffff',
+    surface: appTheme?.theme?.colors?.surface || '#ffffff',
+    onSurface: appTheme?.theme?.colors?.onSurface || '#121212',
+    background: appTheme?.theme?.colors?.background || '#f6f6f6',
+    onBackground: appTheme?.theme?.colors?.onBackground || '#121212',
+    surfaceVariant: appTheme?.theme?.colors?.surfaceVariant || '#f5f5f5',
+    onSurfaceVariant: appTheme?.theme?.colors?.onSurfaceVariant || '#6b6b6b',
+    outline: appTheme?.theme?.colors?.outline || '#79747e',
+    success: appTheme?.theme?.colors?.success || '#4caf50',
+    warning: appTheme?.theme?.colors?.warning || '#ff9800',
+  };
+};
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
