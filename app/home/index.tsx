@@ -194,7 +194,7 @@ export default function Home() {
                 <Avatar.Icon 
                   icon="cctv" 
                   size={48} 
-                  style={{ backgroundColor: `${theme.colors.primary}20` }}
+                  style={{ backgroundColor: theme.colors.primary ? theme.colors.primary + '33' : '#00000033' }}
                   color={theme.colors.primary}
                 />
                 <Text style={{ color: theme.colors.onSurface, marginTop: 8 }}>Cameras</Text>
@@ -209,7 +209,7 @@ export default function Home() {
                 <Avatar.Icon 
                   icon="devices" 
                   size={48} 
-                  style={{ backgroundColor: `${theme.colors.primary}20` }}
+                  style={{ backgroundColor: theme.colors.primary ? theme.colors.primary + '33' : '#00000033' }}
                   color={theme.colors.primary}
                 />
                 <Text style={{ color: theme.colors.onSurface, marginTop: 8 }}>Devices</Text>
@@ -224,7 +224,7 @@ export default function Home() {
                 <Avatar.Icon 
                   icon="bell-alert" 
                   size={48} 
-                  style={{ backgroundColor: `${theme.colors.primary}20` }}
+                  style={{ backgroundColor: theme.colors.primary ? theme.colors.primary + '33' : '#00000033' }}
                   color={theme.colors.primary}
                 />
                 <Text style={{ color: theme.colors.onSurface, marginTop: 8 }}>Alerts</Text>
@@ -252,7 +252,7 @@ export default function Home() {
                 <Avatar.Icon 
                   icon="cog" 
                   size={48} 
-                  style={{ backgroundColor: `${theme.colors.primary}20` }}
+                  style={{ backgroundColor: theme.colors.primary ? theme.colors.primary + '33' : '#00000033' }}
                   color={theme.colors.primary}
                 />
                 <Text style={{ color: theme.colors.onSurface, marginTop: 8 }}>Settings</Text>
@@ -340,7 +340,7 @@ export default function Home() {
                     <Avatar.Icon 
                       icon={alert.icon} 
                       size={36} 
-                      style={{ backgroundColor: `${getSeverityColor(alert.severity)}20` }}
+                      style={{ backgroundColor: getSeverityColor(alert.severity) ? getSeverityColor(alert.severity) + '33' : '#00000033' }}
                       color={getSeverityColor(alert.severity)}
                     />
                     

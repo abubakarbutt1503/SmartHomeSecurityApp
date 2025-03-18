@@ -182,7 +182,7 @@ const DeviceItem = ({ device, onPress, onToggle }) => {
             icon={getDeviceIcon(device.type)} 
             style={{ 
               backgroundColor: device.online 
-                ? `${theme.colors.primary}20` 
+                ? (theme.colors.primary ? theme.colors.primary + '33' : '#00000033')
                 : theme.colors.surfaceVariant 
             }}
             color={device.online ? theme.colors.primary : theme.colors.outline}
@@ -425,7 +425,7 @@ export default function DevicesScreen() {
                     icon={getDeviceIcon(selectedDevice.type)} 
                     style={{ 
                       backgroundColor: selectedDevice.online 
-                        ? `${theme.colors.primary}20` 
+                        ? (theme.colors.primary ? theme.colors.primary + '33' : '#00000033')
                         : theme.colors.surfaceVariant 
                     }}
                     color={selectedDevice.online ? theme.colors.primary : theme.colors.outline}
@@ -436,8 +436,8 @@ export default function DevicesScreen() {
                       mode="outlined" 
                       style={{ 
                         backgroundColor: selectedDevice.online 
-                          ? `${theme.colors.success}10`
-                          : `${theme.colors.error}10`,
+                          ? theme.colors.success + '10'
+                          : theme.colors.error + '10',
                         borderColor: selectedDevice.online 
                           ? theme.colors.success
                           : theme.colors.error,

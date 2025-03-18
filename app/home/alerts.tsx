@@ -153,7 +153,7 @@ const AlertItem = ({ alert, onPress }) => {
           <Avatar.Icon 
             {...props} 
             icon={getAlertIcon(alert.type)} 
-            style={{ backgroundColor: `${getSeverityColor(alert.severity, theme)}20` }}
+            style={{ backgroundColor: getSeverityColor(alert.severity, theme) ? getSeverityColor(alert.severity, theme) + '33' : '#00000033' }}
             color={getSeverityColor(alert.severity, theme)}
             size={40}
           />
