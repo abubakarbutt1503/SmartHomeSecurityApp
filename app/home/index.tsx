@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, Image, useColorScheme } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, ScrollView, Image, useColorScheme, Alert } from 'react-native';
 import { 
   Appbar, 
   Badge, 
@@ -13,22 +13,32 @@ import {
   Avatar,
   Divider,
   ProgressBar,
-  SegmentedButtons
+  SegmentedButtons,
+  ActivityIndicator
 } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 import { useAppTheme } from '../../theme/ThemeProvider';
+import { 
+  toggleSystemArming, 
+  refreshSystemStatus, 
+  triggerPanicAlarm, 
+  lockAllDevices, 
+  recordAllCameras, 
+  testAlarms 
+} from '../../utils/dashboardFunctions';
 
 export default function Home() {
   const { theme, isDarkMode } = useAppTheme();
   const [systemArmed, setSystemArmed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Mock data for unread alerts count and system status
-  const unreadAlerts = 2;
-  const batteryLevel = 75;
-  const systemStatus = 'Normal';
-  const lastCheck = '2 minutes ago';
-  const deviceStatus = { online: 6, offline: 1, total: 7 };
+  const [systemStatus, setSystemStatus] = useState('Normal');
+  const [lastCheck, setLastCheck] = useState('2 minutes ago');
+  const [batteryLevel, setBatteryLevel] = useState(75);
+  const [deviceStatus, setDeviceStatus] = useState({ online: 6, offline: 1, total: 7 });
+  const [unreadAlerts, setUnreadAlerts] = useState(2);
   
   // Calculate the online device percentage
   const onlineDevicePercentage = deviceStatus.online / deviceStatus.total;
@@ -61,6 +71,26 @@ export default function Home() {
       case 'low': return theme.colors.success;
       default: return theme.colors.primary;
     }
+  };
+  
+  // Function to handle system status refresh
+  const handleRefreshStatus = async () => {
+    setRefreshing(true);
+    try {
+      const result = await refreshSystemStatus();
+      setSystemStatus(result.systemStatus);
+      setLastCheck(result.lastCheck);
+      setBatteryLevel(result.batteryLevel);
+    } catch (error) {
+      Alert.alert("Error", "Failed to refresh system status.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Function to handle system arming/disarming
+  const handleArmingToggle = () => {
+    toggleSystemArming(systemArmed, setSystemArmed);
   };
   
   return (
@@ -107,12 +137,21 @@ export default function Home() {
                   }}>
                     {systemStatus}
                   </Text>
-                  <IconButton 
-                    {...props} 
-                    icon="refresh" 
-                    iconColor={theme.colors.primary}
-                    onPress={() => console.log('Refresh status')}
-                  />
+                  {refreshing ? (
+                    <ActivityIndicator 
+                      animating={true} 
+                      color={theme.colors.primary} 
+                      size={24}
+                      style={{ marginHorizontal: 16 }}
+                    />
+                  ) : (
+                    <IconButton 
+                      {...props} 
+                      icon="refresh" 
+                      iconColor={theme.colors.primary}
+                      onPress={handleRefreshStatus}
+                    />
+                  )}
                 </View>
               )}
             />
@@ -169,7 +208,7 @@ export default function Home() {
                     icon={systemArmed ? 'shield' : 'shield-off'} 
                     iconColor={systemArmed ? theme.colors.primary : theme.colors.error}
                     size={36}
-                    onPress={() => setSystemArmed(!systemArmed)}
+                    onPress={handleArmingToggle}
                     style={styles.armingButton}
                   />
                   <Text style={{ 
@@ -383,7 +422,7 @@ export default function Home() {
               <View style={styles.quickActionsGrid}>
                 <Card 
                   style={{ ...styles.actionCard, backgroundColor: theme.colors.surfaceVariant }}
-                  onPress={() => console.log('Panic alarm')}
+                  onPress={triggerPanicAlarm}
                 >
                   <Card.Content style={styles.actionContent}>
                     <IconButton 
@@ -399,7 +438,7 @@ export default function Home() {
                 
                 <Card 
                   style={{ ...styles.actionCard, backgroundColor: theme.colors.surfaceVariant }}
-                  onPress={() => console.log('Lock all')}
+                  onPress={lockAllDevices}
                 >
                   <Card.Content style={styles.actionContent}>
                     <IconButton 
@@ -415,7 +454,7 @@ export default function Home() {
                 
                 <Card 
                   style={{ ...styles.actionCard, backgroundColor: theme.colors.surfaceVariant }}
-                  onPress={() => router.push('/home/camera')}
+                  onPress={recordAllCameras}
                 >
                   <Card.Content style={styles.actionContent}>
                     <IconButton 
@@ -431,7 +470,7 @@ export default function Home() {
                 
                 <Card 
                   style={{ ...styles.actionCard, backgroundColor: theme.colors.surfaceVariant }}
-                  onPress={() => console.log('Test alarms')}
+                  onPress={testAlarms}
                 >
                   <Card.Content style={styles.actionContent}>
                     <IconButton 
@@ -457,7 +496,7 @@ export default function Home() {
             backgroundColor: systemArmed ? theme.colors.error : theme.colors.primary
           }}
           color={systemArmed ? theme.colors.onError : theme.colors.onPrimary}
-          onPress={() => setSystemArmed(!systemArmed)}
+          onPress={handleArmingToggle}
         />
       </View>
     </SafeAreaProvider>

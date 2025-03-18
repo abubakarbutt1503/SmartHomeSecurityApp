@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { StyleSheet, View, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Button, Text, TextInput, Surface, IconButton } from 'react-native-paper';
-import { Link, router } from 'expo-router';
 import { useAppTheme } from '../../theme/ThemeProvider';
+import { navigateToSignup, navigateToHome, navigateBack } from '../../utils/navigation';
 
 export default function LoginScreen() {
   const { theme } = useAppTheme();
@@ -16,7 +16,7 @@ export default function LoginScreen() {
     try {
       // TODO: Implement Supabase authentication
       console.log('Login attempt with:', email);
-      router.replace('/home');
+      navigateToHome();
     } catch (error) {
       console.error('Login error:', error);
     } finally {
@@ -102,17 +102,20 @@ export default function LoginScreen() {
         
         <View style={styles.footer}>
           <Text style={{ color: theme.colors.onSurfaceVariant }}>Don't have an account? </Text>
-          <Link href="/auth/signup" asChild>
-            <Button mode="text" compact textColor={theme.colors.primary}>
-              Sign Up
-            </Button>
-          </Link>
+          <Button 
+            mode="text" 
+            compact 
+            textColor={theme.colors.primary}
+            onPress={navigateToSignup}
+          >
+            Sign Up
+          </Button>
         </View>
         
         <IconButton
           icon="arrow-left"
           size={24}
-          onPress={() => router.back()}
+          onPress={navigateBack}
           style={styles.backButton}
           iconColor={theme.colors.primary}
         />

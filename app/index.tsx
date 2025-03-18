@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { Link } from 'expo-router';
 import { useAppTheme } from '../theme/ThemeProvider';
+import { navigateToSignup, navigateToLogin } from '../utils/navigation';
 
 export default function WelcomeScreen() {
   const { theme } = useAppTheme();
@@ -38,25 +39,23 @@ export default function WelcomeScreen() {
         </Text>
         
         <View style={styles.buttonContainer}>
-          <Link href="/auth/signup" asChild>
-            <Button 
-              mode="contained" 
-              style={styles.button}
-              buttonColor={theme.colors.primary}
-            >
-              Sign Up
-            </Button>
-          </Link>
+          <Button 
+            mode="contained" 
+            style={styles.button}
+            buttonColor={theme.colors.primary}
+            onPress={navigateToSignup}
+          >
+            Sign Up
+          </Button>
           
-          <Link href="/auth/login" asChild>
-            <Button 
-              mode="outlined" 
-              style={styles.button}
-              textColor={theme.colors.primary}
-            >
-              Log In
-            </Button>
-          </Link>
+          <Button 
+            mode="outlined" 
+            style={styles.button}
+            textColor={theme.colors.primary}
+            onPress={navigateToLogin}
+          >
+            Log In
+          </Button>
         </View>
       </View>
     </View>
