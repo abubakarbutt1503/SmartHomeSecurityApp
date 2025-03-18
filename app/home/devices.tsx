@@ -19,7 +19,7 @@ import {
   Avatar,
   Divider,
 } from 'react-native-paper';
-import { router } from 'expo-router';
+import { navigateBack, navigateToHome } from '../../utils/navigation';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 // Mock device data
@@ -163,6 +163,20 @@ const getTimeSince = (date) => {
 const DeviceItem = ({ device, onPress, onToggle }) => {
   const { theme } = useAppTheme();
   
+  // Ensure theme colors exist to avoid undefined errors
+  const safeColors = {
+    success: theme?.colors?.success || '#4CAF50',
+    error: theme?.colors?.error || '#F44336',
+    warning: theme?.colors?.warning || '#FF9800',
+    primary: theme?.colors?.primary || '#2196F3',
+    onSurface: theme?.colors?.onSurface || '#000000',
+    onSurfaceVariant: theme?.colors?.onSurfaceVariant || '#666666',
+    surface: theme?.colors?.surface || '#FFFFFF',
+    background: theme?.colors?.background || '#F5F5F5',
+    outline: theme?.colors?.outline || '#CCCCCC',
+    surfaceVariant: theme?.colors?.surfaceVariant || '#EEEEEE',
+  };
+  
   return (
     <Card 
       style={{ 
@@ -225,18 +239,18 @@ const DeviceItem = ({ device, onPress, onToggle }) => {
               mode="outlined" 
               style={{ 
                 backgroundColor: device.online 
-                  ? `${theme.colors.success}10`
-                  : `${theme.colors.error}10`,
+                  ? `${safeColors.success}20`
+                  : `${safeColors.error}20`,
                 borderColor: device.online 
-                  ? theme.colors.success
-                  : theme.colors.error,
+                  ? safeColors.success
+                  : safeColors.error,
                 height: 24,
               }}
               textStyle={{ 
                 fontSize: 12,
                 color: device.online 
-                  ? theme.colors.success
-                  : theme.colors.error
+                  ? safeColors.success
+                  : safeColors.error
               }}
             >
               {device.online ? 'Online' : 'Offline'}
@@ -257,31 +271,49 @@ const DeviceItem = ({ device, onPress, onToggle }) => {
 
 export default function DevicesScreen() {
   const { theme } = useAppTheme();
-  const [searchQuery, setSearchQuery] = useState('');
   const [devices, setDevices] = useState(DEVICES);
-  const [viewMode, setViewMode] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [dialogVisible, setDialogVisible] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [addDeviceVisible, setAddDeviceVisible] = useState(false);
   
-  // Filtered devices based on search and view mode
+  // Ensure theme colors exist to avoid undefined errors
+  const safeColors = {
+    success: theme?.colors?.success || '#4CAF50',
+    error: theme?.colors?.error || '#F44336',
+    warning: theme?.colors?.warning || '#FF9800',
+    primary: theme?.colors?.primary || '#2196F3',
+    onSurface: theme?.colors?.onSurface || '#000000',
+    onSurfaceVariant: theme?.colors?.onSurfaceVariant || '#666666',
+    surface: theme?.colors?.surface || '#FFFFFF',
+    background: theme?.colors?.background || '#F5F5F5',
+    outline: theme?.colors?.outline || '#CCCCCC',
+    surfaceVariant: theme?.colors?.surfaceVariant || '#EEEEEE',
+  };
+  
+  // Filter and search devices
   const filteredDevices = devices.filter(device => {
-    // Search filter
-    const matchesSearch = 
-      device.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      device.location.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // View mode filter
-    const matchesViewMode = 
-      viewMode === 'all' || 
-      (viewMode === 'online' && device.online) ||
-      (viewMode === 'offline' && !device.online) ||
-      (viewMode === 'low-battery' && device.battery <= 20);
-    
-    return matchesSearch && matchesViewMode;
+    const matchesSearch = device.name.toLowerCase().includes(searchQuery.toLowerCase())
+      || device.location.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesFilter = filterType === 'all' 
+      || (filterType === 'online' && device.online) 
+      || (filterType === 'offline' && !device.online)
+      || filterType === device.type;
+      
+    return matchesSearch && matchesFilter;
   });
+  
+  const deviceCount = {
+    all: devices.length,
+    online: devices.filter(d => d.online).length,
+    offline: devices.filter(d => !d.online).length,
+  };
   
   const handleDevicePress = (device) => {
     setSelectedDevice(device);
+    setDialogVisible(true);
   };
   
   const handleDeviceToggle = (deviceId) => {
@@ -298,17 +330,23 @@ export default function DevicesScreen() {
     setSelectedDevice(null);
   };
   
-  // Device counters
-  const onlineCount = devices.filter(d => d.online).length;
-  const offlineCount = devices.filter(d => !d.online).length;
-  const lowBatteryCount = devices.filter(d => d.battery <= 20).length;
+  const renderDeviceTypeIcon = (type) => {
+    switch(type) {
+      case 'camera': return 'cctv';
+      case 'motion': return 'motion-sensor';
+      case 'door': return 'door';
+      case 'window': return 'window-open-variant';
+      case 'smoke': return 'smoke-detector';
+      default: return 'devices';
+    }
+  };
   
   return (
     <View style={{ ...styles.container, backgroundColor: theme.colors.background }}>
       <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
-        <Appbar.BackAction onPress={() => router.back()} color={theme.colors.onPrimary} />
+        <Appbar.BackAction onPress={navigateBack} color={theme.colors.onPrimary} />
         <Appbar.Content title="Devices" color={theme.colors.onPrimary} />
-        <Appbar.Action icon="refresh" onPress={() => console.log('Refresh devices')} color={theme.colors.onPrimary} />
+        <Appbar.Action icon="home" onPress={navigateToHome} color={theme.colors.onPrimary} />
       </Appbar.Header>
       
       <View style={styles.searchContainer}>
@@ -329,7 +367,7 @@ export default function DevicesScreen() {
         <Card style={{ ...styles.statCard, backgroundColor: theme.colors.surfaceVariant }}>
           <View style={styles.statContent}>
             <Text style={{ color: theme.colors.primary, fontSize: 28, fontWeight: 'bold' }}>
-              {devices.length}
+              {deviceCount.all}
             </Text>
             <Text style={{ color: theme.colors.onSurfaceVariant }}>Total</Text>
           </View>
@@ -338,7 +376,7 @@ export default function DevicesScreen() {
         <Card style={{ ...styles.statCard, backgroundColor: theme.colors.surfaceVariant }}>
           <View style={styles.statContent}>
             <Text style={{ color: theme.colors.success, fontSize: 28, fontWeight: 'bold' }}>
-              {onlineCount}
+              {deviceCount.online}
             </Text>
             <Text style={{ color: theme.colors.onSurfaceVariant }}>Online</Text>
           </View>
@@ -347,7 +385,7 @@ export default function DevicesScreen() {
         <Card style={{ ...styles.statCard, backgroundColor: theme.colors.surfaceVariant }}>
           <View style={styles.statContent}>
             <Text style={{ color: theme.colors.error, fontSize: 28, fontWeight: 'bold' }}>
-              {offlineCount}
+              {deviceCount.offline}
             </Text>
             <Text style={{ color: theme.colors.onSurfaceVariant }}>Offline</Text>
           </View>
@@ -356,8 +394,8 @@ export default function DevicesScreen() {
       
       <View style={styles.viewToggleContainer}>
         <SegmentedButtons
-          value={viewMode}
-          onValueChange={setViewMode}
+          value={filterType}
+          onValueChange={setFilterType}
           buttons={[
             { value: 'all', label: 'All', icon: 'devices' },
             { value: 'online', label: 'Online', icon: 'wifi' },
@@ -422,7 +460,7 @@ export default function DevicesScreen() {
                 <View style={styles.deviceDetailHeader}>
                   <Avatar.Icon 
                     size={60} 
-                    icon={getDeviceIcon(selectedDevice.type)} 
+                    icon={renderDeviceTypeIcon(selectedDevice.type)} 
                     style={{ 
                       backgroundColor: selectedDevice.online 
                         ? (theme.colors.primary ? theme.colors.primary + '33' : '#00000033')
@@ -436,16 +474,16 @@ export default function DevicesScreen() {
                       mode="outlined" 
                       style={{ 
                         backgroundColor: selectedDevice.online 
-                          ? theme.colors.success + '10'
-                          : theme.colors.error + '10',
+                          ? `${safeColors.success}20`
+                          : `${safeColors.error}20`,
                         borderColor: selectedDevice.online 
-                          ? theme.colors.success
-                          : theme.colors.error,
+                          ? safeColors.success
+                          : safeColors.error,
                       }}
                       textStyle={{ 
                         color: selectedDevice.online 
-                          ? theme.colors.success
-                          : theme.colors.error
+                          ? safeColors.success
+                          : safeColors.error
                       }}
                     >
                       {selectedDevice.online ? 'Online' : 'Offline'}

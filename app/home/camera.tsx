@@ -10,7 +10,7 @@ import {
   FAB, 
   Chip
 } from 'react-native-paper';
-import { router } from 'expo-router';
+import { navigateBack, navigateToHome } from '../../utils/navigation';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 // Mock camera data
@@ -124,13 +124,9 @@ export default function CameraScreen() {
   return (
     <View style={{ ...styles.container, backgroundColor: theme.colors.background }}>
       <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
-        <Appbar.BackAction onPress={() => router.back()} color={theme.colors.onPrimary} />
+        <Appbar.BackAction onPress={navigateBack} color={theme.colors.onPrimary} />
         <Appbar.Content title="Cameras" color={theme.colors.onPrimary} />
-        <Appbar.Action 
-          icon="refresh" 
-          onPress={() => console.log('Refresh cameras')} 
-          color={theme.colors.onPrimary} 
-        />
+        <Appbar.Action icon="home" onPress={navigateToHome} color={theme.colors.onPrimary} />
       </Appbar.Header>
       
       <View style={styles.viewControls}>

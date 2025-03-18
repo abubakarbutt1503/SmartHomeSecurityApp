@@ -1,22 +1,50 @@
 // Navigation utility functions
 import { router } from 'expo-router';
 
-// Function to navigate to the signup page
+// Auth screens navigation
 export const navigateToSignup = () => {
-  router.push('/auth/signup');
+  router.push('/auth/login');
 };
 
-// Function to navigate to the login page
 export const navigateToLogin = () => {
   router.push('/auth/login');
 };
 
-// Function to navigate to the home page
+export const navigateToResetPassword = () => {
+  router.push('/auth/reset-password');
+};
+
+// Home dashboard navigation
 export const navigateToHome = () => {
   router.replace('/home');
 };
 
-// Function to navigate back
+// Home tab screens navigation
+export const navigateToDevices = () => {
+  router.push('/home/devices');
+};
+
+export const navigateToAlerts = () => {
+  router.push('/home/alerts');
+};
+
+export const navigateToSettings = () => {
+  router.push('/home/settings');
+};
+
+export const navigateToCamera = () => {
+  router.push('/home/camera');
+};
+
+export const navigateToActivity = () => {
+  router.push('/home/activity');
+};
+
+export const navigateToBoundary = () => {
+  router.push('/home/add-boundary');
+};
+
+// Common navigation functions
 export const navigateBack = () => {
   router.back();
 };

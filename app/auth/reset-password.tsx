@@ -1,24 +1,39 @@
 import { useState } from 'react';
-import { StyleSheet, View, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { Button, Text, TextInput, Surface, IconButton } from 'react-native-paper';
+import { StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { Button, Text, TextInput, Surface, IconButton, HelperText } from 'react-native-paper';
 import { useAppTheme } from '../../theme/ThemeProvider';
-import { navigateToSignup, navigateToHome, navigateBack, navigateToResetPassword } from '../../utils/navigation';
+import { navigateBack } from '../../utils/navigation';
 
-export default function LoginScreen() {
+export default function ResetPasswordScreen() {
   const { theme } = useAppTheme();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
-  const handleLogin = async () => {
+  const handleResetPassword = async () => {
+    if (!email) {
+      return;
+    }
+
     setLoading(true);
     try {
-      // TODO: Implement Supabase authentication
-      console.log('Login attempt with:', email);
-      navigateToHome();
+      // TODO: Implement actual password reset using your auth provider
+      console.log('Password reset request for:', email);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setEmailSent(true);
+      Alert.alert(
+        "Reset Email Sent",
+        `We've sent password reset instructions to ${email}. Please check your inbox.`
+      );
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Password reset error:', error);
+      Alert.alert(
+        "Error",
+        "There was a problem sending the reset email. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -35,13 +50,15 @@ export default function LoginScreen() {
             variant="displaySmall" 
             style={{ color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}
           >
-            Welcome Back
+            Reset Password
           </Text>
           <Text 
             variant="titleMedium" 
             style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 10 }}
           >
-            Log in to your Home Safety account
+            {emailSent 
+              ? "Check your email for reset instructions" 
+              : "Enter your email to receive reset instructions"}
           </Text>
         </View>
         
@@ -53,64 +70,36 @@ export default function LoginScreen() {
             mode="outlined"
             keyboardType="email-address"
             autoCapitalize="none"
+            disabled={emailSent}
             style={styles.input}
             outlineColor={theme.colors.outline}
             activeOutlineColor={theme.colors.primary}
             left={<TextInput.Icon icon="email" color={theme.colors.primary} />}
           />
           
-          <TextInput
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            mode="outlined"
-            secureTextEntry={!showPassword}
-            style={styles.input}
-            outlineColor={theme.colors.outline}
-            activeOutlineColor={theme.colors.primary}
-            left={<TextInput.Icon icon="lock" color={theme.colors.primary} />}
-            right={
-              <TextInput.Icon 
-                icon={showPassword ? "eye-off" : "eye"} 
-                onPress={() => setShowPassword(!showPassword)}
-                color={theme.colors.onSurfaceVariant}
-              />
-            }
-          />
-          
           <Button
             mode="contained"
-            onPress={handleLogin}
+            onPress={handleResetPassword}
             loading={loading}
             style={styles.button}
             buttonColor={theme.colors.primary}
             contentStyle={styles.buttonContent}
-            disabled={!email || !password}
+            disabled={!email || emailSent}
           >
-            Log In
+            {emailSent ? "Email Sent" : "Send Reset Instructions"}
           </Button>
           
-          <Button
-            mode="text"
-            onPress={navigateToResetPassword}
-            style={styles.forgotPassword}
-            textColor={theme.colors.primary}
-          >
-            Forgot Password?
-          </Button>
+          {emailSent && (
+            <Button
+              mode="outlined"
+              onPress={() => setEmailSent(false)}
+              style={[styles.button, { marginTop: 12 }]}
+              contentStyle={styles.buttonContent}
+            >
+              Try Another Email
+            </Button>
+          )}
         </Surface>
-        
-        <View style={styles.footer}>
-          <Text style={{ color: theme.colors.onSurfaceVariant }}>Don't have an account? </Text>
-          <Button 
-            mode="text" 
-            compact 
-            textColor={theme.colors.primary}
-            onPress={navigateToSignup}
-          >
-            Sign Up
-          </Button>
-        </View>
         
         <IconButton
           icon="arrow-left"
@@ -150,16 +139,6 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     height: 50,
-  },
-  forgotPassword: {
-    alignSelf: 'center',
-    marginTop: 16,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 40,
   },
   backButton: {
     position: 'absolute',

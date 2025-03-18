@@ -21,6 +21,24 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export const useAppTheme = () => useContext(ThemeContext);
 
+// Add useThemeMode hook for settings page
+export const useThemeMode = () => {
+  const { theme, themeType, setThemeType, isDarkMode } = useContext(ThemeContext);
+  
+  const toggleTheme = (mode: ThemeType) => {
+    setThemeType(mode);
+  };
+  
+  return {
+    theme: {
+      ...theme,
+      mode: themeType, // Add mode property to theme
+    },
+    toggleTheme,
+    isDarkMode,
+  };
+};
+
 interface ThemeProviderProps {
   children: ReactNode;
 }

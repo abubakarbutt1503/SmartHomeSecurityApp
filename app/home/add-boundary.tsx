@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, TextInput, Button, Appbar, Surface } from 'react-native-paper';
-import { router } from 'expo-router';
+import { navigateBack } from '../../utils/navigation';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 export default function AddBoundaryScreen() {
@@ -12,14 +12,14 @@ export default function AddBoundaryScreen() {
   const handleSave = () => {
     // TODO: Save boundary to database
     console.log('Saving boundary:', { name, description });
-    router.back();
+    navigateBack();
   };
 
   return (
     <View style={{ ...styles.container, backgroundColor: theme.colors.background }}>
       <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
-        <Appbar.BackAction onPress={() => router.back()} color={theme.colors.onPrimary} />
-        <Appbar.Content title="Add New Boundary" color={theme.colors.onPrimary} />
+        <Appbar.BackAction onPress={navigateBack} color={theme.colors.onPrimary} />
+        <Appbar.Content title="Add Security Boundary" color={theme.colors.onPrimary} />
       </Appbar.Header>
 
       <ScrollView style={styles.scrollView}>

@@ -16,7 +16,7 @@ import {
   Portal,
   RadioButton
 } from 'react-native-paper';
-import { router } from 'expo-router';
+import { navigateBack, navigateToHome } from '../../utils/navigation';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 // Mock alert data
@@ -129,6 +129,33 @@ const getSeverityLabel = (severity) => {
 const AlertItem = ({ alert, onPress }) => {
   const { theme } = useAppTheme();
   
+  // Ensure theme colors exist to avoid undefined errors
+  const safeColors = {
+    success: theme?.colors?.success || '#4CAF50',
+    error: theme?.colors?.error || '#F44336',
+    warning: theme?.colors?.warning || '#FF9800',
+    primary: theme?.colors?.primary || '#2196F3',
+    secondary: theme?.colors?.secondary || '#03DAC6',
+    onSurface: theme?.colors?.onSurface || '#000000',
+    onSurfaceVariant: theme?.colors?.onSurfaceVariant || '#666666',
+    surface: theme?.colors?.surface || '#FFFFFF',
+    background: theme?.colors?.background || '#F5F5F5',
+    outline: theme?.colors?.outline || '#CCCCCC',
+    surfaceVariant: theme?.colors?.surfaceVariant || '#EEEEEE',
+  };
+  
+  // Get color based on severity for this component
+  const getItemSeverityColor = (severity) => {
+    switch (severity) {
+      case 'critical': return safeColors.error;
+      case 'high': return safeColors.error;
+      case 'medium': return safeColors.warning;
+      case 'low': return safeColors.success;
+      case 'info': return safeColors.primary;
+      default: return safeColors.primary;
+    }
+  };
+  
   const formattedDate = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
@@ -142,7 +169,7 @@ const AlertItem = ({ alert, onPress }) => {
         ...styles.alertCard, 
         backgroundColor: theme.colors.surface,
         borderLeftWidth: 4,
-        borderLeftColor: getSeverityColor(alert.severity, theme),
+        borderLeftColor: getItemSeverityColor(alert.severity),
       }}
       onPress={() => onPress(alert)}
     >
@@ -153,8 +180,8 @@ const AlertItem = ({ alert, onPress }) => {
           <Avatar.Icon 
             {...props} 
             icon={getAlertIcon(alert.type)} 
-            style={{ backgroundColor: getSeverityColor(alert.severity, theme) ? getSeverityColor(alert.severity, theme) + '33' : '#00000033' }}
-            color={getSeverityColor(alert.severity, theme)}
+            style={{ backgroundColor: getItemSeverityColor(alert.severity) ? getItemSeverityColor(alert.severity) + '33' : '#00000033' }}
+            color={getItemSeverityColor(alert.severity)}
             size={40}
           />
         )}
@@ -163,11 +190,11 @@ const AlertItem = ({ alert, onPress }) => {
             <Chip 
               mode="outlined" 
               style={{ 
-                backgroundColor: `${theme.colors.success}20`,
-                borderColor: theme.colors.success,
+                backgroundColor: `${safeColors.success}20`,
+                borderColor: safeColors.success,
                 marginRight: 16,
               }}
-              textStyle={{ color: theme.colors.success }}
+              textStyle={{ color: safeColors.success }}
             >
               Handled
             </Chip>
@@ -175,11 +202,11 @@ const AlertItem = ({ alert, onPress }) => {
             <Chip 
               mode="outlined" 
               style={{ 
-                backgroundColor: `${theme.colors.warning}20`,
-                borderColor: theme.colors.warning,
+                backgroundColor: `${safeColors.warning}20`,
+                borderColor: safeColors.warning,
                 marginRight: 16,
               }}
-              textStyle={{ color: theme.colors.warning }}
+              textStyle={{ color: safeColors.warning }}
             >
               Pending
             </Chip>
@@ -200,6 +227,32 @@ export default function AlertsScreen() {
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [filterDialogVisible, setFilterDialogVisible] = useState(false);
   const [tempSeverityFilter, setTempSeverityFilter] = useState(severityFilter);
+  
+  // Ensure theme colors exist to avoid undefined errors
+  const safeColors = {
+    success: theme?.colors?.success || '#4CAF50',
+    error: theme?.colors?.error || '#F44336',
+    warning: theme?.colors?.warning || '#FF9800',
+    primary: theme?.colors?.primary || '#2196F3',
+    secondary: theme?.colors?.secondary || '#03DAC6',
+    onSurface: theme?.colors?.onSurface || '#000000',
+    onSurfaceVariant: theme?.colors?.onSurfaceVariant || '#666666',
+    surface: theme?.colors?.surface || '#FFFFFF',
+    background: theme?.colors?.background || '#F5F5F5',
+    outline: theme?.colors?.outline || '#CCCCCC',
+    surfaceVariant: theme?.colors?.surfaceVariant || '#EEEEEE',
+  };
+  
+  // Get color based on severity
+  const getSeverityColor = (severity, themeObj) => {
+    switch (severity) {
+      case 'critical': return safeColors.error;
+      case 'high': return safeColors.error;
+      case 'medium': return safeColors.warning;
+      case 'low': return safeColors.success;
+      default: return safeColors.primary;
+    }
+  };
   
   // Filter alerts based on search query and filters
   const filteredAlerts = MOCK_ALERTS.filter(alert => {
@@ -236,7 +289,7 @@ export default function AlertsScreen() {
   return (
     <View style={{ ...styles.container, backgroundColor: theme.colors.background }}>
       <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
-        <Appbar.BackAction onPress={() => router.back()} color={theme.colors.onPrimary} />
+        <Appbar.BackAction onPress={navigateBack} color={theme.colors.onPrimary} />
         <Appbar.Content title="Security Alerts" color={theme.colors.onPrimary} />
         {unhandledCount > 0 && (
           <Badge 
@@ -252,6 +305,11 @@ export default function AlertsScreen() {
         <Appbar.Action 
           icon="filter-variant" 
           onPress={() => setFilterDialogVisible(true)} 
+          color={theme.colors.onPrimary} 
+        />
+        <Appbar.Action 
+          icon="home" 
+          onPress={navigateToHome} 
           color={theme.colors.onPrimary} 
         />
       </Appbar.Header>
@@ -281,8 +339,8 @@ export default function AlertsScreen() {
           onPress={() => setSeverityFilter('all')}
           style={{ 
             backgroundColor: severityFilter === 'all' 
-              ? `${theme.colors.primary}20` 
-              : theme.colors.surfaceVariant 
+              ? `${safeColors.primary}20` 
+              : safeColors.surfaceVariant 
           }}
         >
           All Severities
@@ -292,8 +350,8 @@ export default function AlertsScreen() {
           onPress={() => setSeverityFilter('critical')}
           style={{ 
             backgroundColor: severityFilter === 'critical' 
-              ? `${theme.colors.error}20` 
-              : theme.colors.surfaceVariant 
+              ? `${safeColors.error}20` 
+              : safeColors.surfaceVariant 
           }}
         >
           Critical
@@ -303,8 +361,8 @@ export default function AlertsScreen() {
           onPress={() => setSeverityFilter('high')}
           style={{ 
             backgroundColor: severityFilter === 'high' 
-              ? `${theme.colors.error}10` 
-              : theme.colors.surfaceVariant 
+              ? `${safeColors.error}20` 
+              : safeColors.surfaceVariant 
           }}
         >
           High
@@ -314,8 +372,8 @@ export default function AlertsScreen() {
           onPress={() => setSeverityFilter('medium')}
           style={{ 
             backgroundColor: severityFilter === 'medium' 
-              ? `${theme.colors.warning}20` 
-              : theme.colors.surfaceVariant 
+              ? `${safeColors.warning}20` 
+              : safeColors.surfaceVariant 
           }}
         >
           Medium
@@ -325,8 +383,8 @@ export default function AlertsScreen() {
           onPress={() => setTypeFilter(typeFilter === 'motion' ? 'all' : 'motion')}
           style={{ 
             backgroundColor: typeFilter === 'motion' 
-              ? `${theme.colors.secondary}20` 
-              : theme.colors.surfaceVariant 
+              ? `${safeColors.secondary}20` 
+              : safeColors.surfaceVariant 
           }}
           icon="motion-sensor"
         >
@@ -337,8 +395,8 @@ export default function AlertsScreen() {
           onPress={() => setTypeFilter(typeFilter === 'door' ? 'all' : 'door')}
           style={{ 
             backgroundColor: typeFilter === 'door' 
-              ? `${theme.colors.secondary}20` 
-              : theme.colors.surfaceVariant 
+              ? `${safeColors.secondary}20` 
+              : safeColors.surfaceVariant 
           }}
           icon="door"
         >
@@ -469,16 +527,16 @@ export default function AlertsScreen() {
                   <Chip 
                     style={{ 
                       backgroundColor: selectedAlert.handled 
-                        ? `${theme.colors.success}20` 
-                        : `${theme.colors.warning}20`,
+                        ? `${safeColors.success}20` 
+                        : `${safeColors.warning}20`,
                       borderColor: selectedAlert.handled 
-                        ? theme.colors.success 
-                        : theme.colors.warning,
+                        ? safeColors.success 
+                        : safeColors.warning,
                     }}
                     textStyle={{ 
                       color: selectedAlert.handled 
-                        ? theme.colors.success 
-                        : theme.colors.warning
+                        ? safeColors.success 
+                        : safeColors.warning
                     }}
                     mode="outlined"
                   >

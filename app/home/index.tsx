@@ -17,8 +17,14 @@ import {
   ActivityIndicator
 } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Link, router } from 'expo-router';
 import { useAppTheme } from '../../theme/ThemeProvider';
+import { 
+  navigateToDevices, 
+  navigateToAlerts, 
+  navigateToSettings,
+  navigateToCamera,
+  navigateToActivity
+} from '../../utils/navigation';
 import { 
   toggleSystemArming, 
   refreshSystemStatus, 
@@ -101,7 +107,7 @@ export default function Home() {
           <Appbar.Action 
             icon="bell" 
             color={theme.colors.onPrimary} 
-            onPress={() => router.push('/home/alerts')}
+            onPress={navigateToAlerts}
           />
           {unreadAlerts > 0 && (
             <Badge 
@@ -119,7 +125,7 @@ export default function Home() {
           <Appbar.Action 
             icon="cog" 
             color={theme.colors.onPrimary} 
-            onPress={() => router.push('/home/settings')}
+            onPress={navigateToSettings}
           />
         </Appbar.Header>
         
@@ -227,7 +233,7 @@ export default function Home() {
           <View style={styles.quickAccessRow}>
             <Card 
               style={{ ...styles.quickAccessCard, backgroundColor: theme.colors.surface }}
-              onPress={() => router.push('/home/camera')}
+              onPress={navigateToCamera}
             >
               <Card.Content style={styles.quickAccessContent}>
                 <Avatar.Icon 
@@ -242,7 +248,7 @@ export default function Home() {
             
             <Card 
               style={{ ...styles.quickAccessCard, backgroundColor: theme.colors.surface }}
-              onPress={() => router.push('/home/devices')}
+              onPress={navigateToDevices}
             >
               <Card.Content style={styles.quickAccessContent}>
                 <Avatar.Icon 
@@ -257,7 +263,7 @@ export default function Home() {
             
             <Card 
               style={{ ...styles.quickAccessCard, backgroundColor: theme.colors.surface }}
-              onPress={() => router.push('/home/alerts')}
+              onPress={navigateToAlerts}
             >
               <Card.Content style={styles.quickAccessContent}>
                 <Avatar.Icon 
@@ -285,7 +291,7 @@ export default function Home() {
             
             <Card 
               style={{ ...styles.quickAccessCard, backgroundColor: theme.colors.surface }}
-              onPress={() => router.push('/home/settings')}
+              onPress={navigateToSettings}
             >
               <Card.Content style={styles.quickAccessContent}>
                 <Avatar.Icon 
@@ -302,7 +308,7 @@ export default function Home() {
           {/* Device Status Card */}
           <Card 
             style={{ ...styles.card, backgroundColor: theme.colors.surface }}
-            onPress={() => router.push('/home/devices')}
+            onPress={navigateToDevices}
           >
             <Card.Title 
               title="Device Status" 
@@ -314,6 +320,7 @@ export default function Home() {
                   {...props} 
                   icon="chevron-right" 
                   iconColor={theme.colors.primary}
+                  onPress={navigateToDevices}
                 />
               )}
             />
@@ -358,7 +365,7 @@ export default function Home() {
           {/* Recent Alerts Card */}
           <Card 
             style={{ ...styles.card, backgroundColor: theme.colors.surface }}
-            onPress={() => router.push('/home/alerts')}
+            onPress={navigateToAlerts}
           >
             <Card.Title 
               title="Recent Alerts" 
@@ -368,6 +375,7 @@ export default function Home() {
                   {...props} 
                   icon="chevron-right" 
                   iconColor={theme.colors.primary}
+                  onPress={navigateToAlerts}
                 />
               )}
             />
@@ -404,7 +412,7 @@ export default function Home() {
                 style={styles.viewAllButton}
                 contentStyle={{ paddingVertical: 2 }}
                 labelStyle={{ color: theme.colors.primary }}
-                onPress={() => router.push('/home/alerts')}
+                onPress={navigateToAlerts}
               >
                 View All Alerts
               </Button>
@@ -429,6 +437,7 @@ export default function Home() {
                       icon="alarm-light" 
                       iconColor={theme.colors.error}
                       size={40}
+                      onPress={triggerPanicAlarm}
                     />
                     <Text style={{ color: theme.colors.error, textAlign: 'center' }}>
                       Panic Alarm
@@ -445,6 +454,7 @@ export default function Home() {
                       icon="lock" 
                       iconColor={theme.colors.primary}
                       size={40}
+                      onPress={lockAllDevices}
                     />
                     <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
                       Lock All
@@ -461,6 +471,7 @@ export default function Home() {
                       icon="record-rec" 
                       iconColor={theme.colors.error}
                       size={40}
+                      onPress={recordAllCameras}
                     />
                     <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
                       Record All
@@ -477,6 +488,7 @@ export default function Home() {
                       icon="alarm-check" 
                       iconColor={theme.colors.primary}
                       size={40}
+                      onPress={testAlarms}
                     />
                     <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
                       Test Alarms

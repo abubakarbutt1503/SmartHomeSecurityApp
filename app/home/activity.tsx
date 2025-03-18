@@ -11,7 +11,7 @@ import {
   SegmentedButtons,
   IconButton
 } from 'react-native-paper';
-import { router } from 'expo-router';
+import { navigateBack, navigateToHome } from '../../utils/navigation';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 // Mock data for demonstration
@@ -171,9 +171,9 @@ export default function ActivityScreen() {
   return (
     <View style={{ ...styles.container, backgroundColor: theme.colors.background }}>
       <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
-        <Appbar.BackAction onPress={() => router.back()} color={theme.colors.onPrimary} />
+        <Appbar.BackAction onPress={navigateBack} color={theme.colors.onPrimary} />
         <Appbar.Content title="Activity Log" color={theme.colors.onPrimary} />
-        <Appbar.Action icon="filter" onPress={() => console.log('Filter')} color={theme.colors.onPrimary} />
+        <Appbar.Action icon="home" onPress={navigateToHome} color={theme.colors.onPrimary} />
       </Appbar.Header>
       
       <View style={styles.searchContainer}>
