@@ -1,24 +1,31 @@
 import { useState } from 'react';
 import { StyleSheet, View, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { Button, Text, TextInput, Surface, IconButton } from 'react-native-paper';
+import { Button, Text, TextInput, Surface, IconButton, HelperText } from 'react-native-paper';
 import { useAppTheme } from '../../theme/ThemeProvider';
+import { useSupabase } from '../../context/SupabaseProvider';
 import { navigateToSignup, navigateToHome, navigateBack, navigateToResetPassword } from '../../utils/navigation';
 
 export default function LoginScreen() {
   const { theme } = useAppTheme();
+  const { signIn } = useSupabase();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     setLoading(true);
+    setError('');
     try {
-      // TODO: Implement Supabase authentication
-      console.log('Login attempt with:', email);
-      navigateToHome();
-    } catch (error) {
-      console.error('Login error:', error);
+      const { data, error: signInError } = await signIn(email, password);
+      if (signInError) {
+        setError(signInError.message);
+      } else {
+        navigateToHome();
+      }
+    } catch (error: any) {
+      setError(error.message || 'An error occurred during login');
     } finally {
       setLoading(false);
     }
@@ -78,6 +85,12 @@ export default function LoginScreen() {
             }
           />
           
+          {error && (
+            <HelperText type="error" visible={!!error}>
+              {error}
+            </HelperText>
+          )}
+
           <Button
             mode="contained"
             onPress={handleLogin}
@@ -85,7 +98,7 @@ export default function LoginScreen() {
             style={styles.button}
             buttonColor={theme.colors.primary}
             contentStyle={styles.buttonContent}
-            disabled={!email || !password}
+            disabled={!email || !password || loading}
           >
             Log In
           </Button>
@@ -166,4 +179,4 @@ const styles = StyleSheet.create({
     top: 10,
     left: 10,
   },
-}); 
+});

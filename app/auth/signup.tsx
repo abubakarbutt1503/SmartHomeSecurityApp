@@ -3,10 +3,12 @@ import { StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView } from 're
 import { Button, Text, TextInput, Surface, IconButton, HelperText } from 'react-native-paper';
 import { Link } from 'expo-router';
 import { useAppTheme } from '../../theme/ThemeProvider';
+import { useSupabase } from '../../context/SupabaseProvider';
 import { navigateToLogin, navigateToHome, navigateBack } from '../../utils/navigation';
 
 export default function SignupScreen() {
   const { theme } = useAppTheme();
+  const { signUp } = useSupabase();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,15 +16,54 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [error, setError] = useState('');
 
-  const validatePasswords = () => {
-    if (password && confirmPassword && password !== confirmPassword) {
-      setPasswordError('Passwords do not match');
+  const validateEmail = () => {
+    if (!email) {
+      setEmailError('Email is required');
       return false;
     }
     
-    if (password.length > 0 && password.length < 8) {
+    const emailRegex = /^[^\s@]+@(gmail\.com|yahoo\.com)$/i;
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid @gmail.com or @yahoo.com email address');
+      return false;
+    }
+    
+    setEmailError('');
+    return true;
+  };
+
+  const validatePasswords = () => {
+    if (!password) {
+      setPasswordError('Password is required');
+      return false;
+    }
+    
+    if (password.length < 8) {
       setPasswordError('Password must be at least 8 characters');
+      return false;
+    }
+    
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    
+    if (!hasUpperCase || !hasNumber || !hasSpecialChar) {
+      setPasswordError(
+        'Password must include at least one uppercase letter, one number, and one special character'
+      );
+      return false;
+    }
+    
+    if (!confirmPassword) {
+      setPasswordError('Please confirm your password');
+      return false;
+    }
+    
+    if (password !== confirmPassword) {
+      setPasswordError('Passwords do not match');
       return false;
     }
     
@@ -31,17 +72,26 @@ export default function SignupScreen() {
   };
 
   const handleSignup = async () => {
-    if (!validatePasswords()) {
+    const isEmailValid = validateEmail();
+    const isPasswordValid = validatePasswords();
+    
+    if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
     setLoading(true);
+    setError('');
     try {
-      // TODO: Implement Supabase authentication
-      console.log('Signup attempt with:', { name, email });
-      navigateToHome();
-    } catch (error) {
-      console.error('Signup error:', error);
+      const { data, error: signUpError } = await signUp(email, password, { full_name: name });
+      if (signUpError) {
+        setError(signUpError.message);
+      } else {
+        // Show success message and navigate to login
+        alert('Please check your email to confirm your account');
+        navigateToLogin();
+      }
+    } catch (error: any) {
+      setError(error.message || 'An error occurred during signup');
     } finally {
       setLoading(false);
     }
@@ -83,27 +133,40 @@ export default function SignupScreen() {
           <TextInput
             label="Email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              // Clear error while typing
+              if (emailError) setEmailError('');
+            }}
+            onBlur={validateEmail}
             mode="outlined"
             keyboardType="email-address"
             autoCapitalize="none"
             style={styles.input}
-            outlineColor={theme.colors.outline}
+            outlineColor={emailError ? theme.colors.error : theme.colors.outline}
             activeOutlineColor={theme.colors.primary}
             left={<TextInput.Icon icon="email" color={theme.colors.primary} />}
           />
+          
+          {emailError ? (
+            <HelperText type="error" visible={!!emailError}>
+              {emailError}
+            </HelperText>
+          ) : null}
           
           <TextInput
             label="Password"
             value={password}
             onChangeText={(text) => {
               setPassword(text);
-              if (confirmPassword) validatePasswords();
+              // Clear error while typing
+              if (passwordError) setPasswordError('');
             }}
+            onBlur={validatePasswords}
             mode="outlined"
             secureTextEntry={!showPassword}
             style={styles.input}
-            outlineColor={theme.colors.outline}
+            outlineColor={passwordError ? theme.colors.error : theme.colors.outline}
             activeOutlineColor={theme.colors.primary}
             left={<TextInput.Icon icon="lock" color={theme.colors.primary} />}
             right={
@@ -120,12 +183,14 @@ export default function SignupScreen() {
             value={confirmPassword}
             onChangeText={(text) => {
               setConfirmPassword(text);
-              if (password) validatePasswords();
+              // Clear error while typing
+              if (passwordError) setPasswordError('');
             }}
+            onBlur={validatePasswords}
             mode="outlined"
             secureTextEntry={!showPassword}
             style={styles.input}
-            outlineColor={theme.colors.outline}
+            outlineColor={passwordError ? theme.colors.error : theme.colors.outline}
             activeOutlineColor={theme.colors.primary}
             left={<TextInput.Icon icon="lock-check" color={theme.colors.primary} />}
           />
@@ -136,6 +201,12 @@ export default function SignupScreen() {
             </HelperText>
           ) : null}
           
+          {error && (
+            <HelperText type="error" visible={!!error}>
+              {error}
+            </HelperText>
+          )}
+
           <Button
             mode="contained"
             onPress={handleSignup}
@@ -143,7 +214,7 @@ export default function SignupScreen() {
             style={styles.button}
             buttonColor={theme.colors.primary}
             contentStyle={styles.buttonContent}
-            disabled={!name || !email || !password || !confirmPassword}
+            disabled={!name || !email || !password || !confirmPassword || !!passwordError || !!emailError || loading}
           >
             Sign Up
           </Button>
@@ -222,4 +293,4 @@ const styles = StyleSheet.create({
     top: 10,
     left: 10,
   },
-}); 
+});

@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { Button, Text, TextInput, Surface, IconButton, HelperText } from 'react-native-paper';
 import { useAppTheme } from '../../theme/ThemeProvider';
+import { useSupabase } from '../../context/SupabaseProvider';
 import { navigateBack } from '../../utils/navigation';
 
 export default function ResetPasswordScreen() {
   const { theme } = useAppTheme();
+  const { resetPassword } = useSupabase();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [error, setError] = useState('');
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -16,24 +19,23 @@ export default function ResetPasswordScreen() {
     }
 
     setLoading(true);
+    setError('');
     try {
-      // TODO: Implement actual password reset using your auth provider
-      console.log('Password reset request for:', email);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setEmailSent(true);
-      Alert.alert(
-        "Reset Email Sent",
-        `We've sent password reset instructions to ${email}. Please check your inbox.`
-      );
-    } catch (error) {
-      console.error('Password reset error:', error);
-      Alert.alert(
-        "Error",
-        "There was a problem sending the reset email. Please try again."
-      );
+      const { data, error: resetError } = await resetPassword(email);
+      if (resetError) {
+        setError(resetError.message);
+        Alert.alert("Error", resetError.message);
+      } else {
+        setEmailSent(true);
+        Alert.alert(
+          "Reset Email Sent",
+          `We've sent password reset instructions to ${email}. Please check your inbox.`
+        );
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || 'An error occurred while sending reset instructions';
+      setError(errorMessage);
+      Alert.alert("Error", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -76,6 +78,12 @@ export default function ResetPasswordScreen() {
             activeOutlineColor={theme.colors.primary}
             left={<TextInput.Icon icon="email" color={theme.colors.primary} />}
           />
+          
+          {error && (
+            <HelperText type="error" visible={!!error}>
+              {error}
+            </HelperText>
+          )}
           
           <Button
             mode="contained"
@@ -145,4 +153,4 @@ const styles = StyleSheet.create({
     top: 10,
     left: 10,
   },
-}); 
+});

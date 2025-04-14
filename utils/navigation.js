@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 
 // Auth screens navigation
 export const navigateToSignup = () => {
-  router.push('/auth/login');
+  router.push('/auth/signup');
 };
 
 export const navigateToLogin = () => {
@@ -56,4 +56,4 @@ export const handleSignOut = () => {
   
   // Navigate back to landing page
   router.replace('/');
-}; 
+};
