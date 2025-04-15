@@ -21,6 +21,15 @@ function useProtectedRoute() {
     const inHomeGroup = segments[0] === 'home';
     // Improved root screen detection to handle all possible segment states
     const isRootScreen = !segments[0] || segments[0] === '';
+    
+    // Special case for password reset confirmation page
+    const isResetPasswordConfirm = segments[0] === 'auth' && segments.length > 1 && segments[1] === 'reset-password-confirm';
+    
+    // If this is a password reset page, don't redirect regardless of auth state
+    if (isResetPasswordConfirm) {
+      console.log('Password reset confirmation page detected, skipping auth redirect');
+      return;
+    }
 
     // Determine where to redirect based on auth state
     if (!user) {

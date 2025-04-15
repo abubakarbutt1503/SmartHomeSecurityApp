@@ -14,6 +14,10 @@ export const navigateToResetPassword = () => {
   router.push('/auth/reset-password');
 };
 
+export const navigateToResetPasswordConfirm = () => {
+  router.push('/auth/reset-password-confirm');
+};
+
 // Home dashboard navigation
 export const navigateToHome = () => {
   router.replace('/home');
@@ -50,10 +54,9 @@ export const navigateBack = () => {
 };
 
 // Function for sign out
+// This is just a navigation wrapper - the actual signOut logic is in SupabaseProvider
+// and should be called from the component using useSupabase hook
 export const handleSignOut = () => {
-  // Clear any auth tokens or user data here
-  // For example: clearAuthData();
-  
-  // Navigate back to landing page
-  router.replace('/');
+  // Navigate to login page
+  router.replace('/auth/login');
 };

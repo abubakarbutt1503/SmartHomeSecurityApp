@@ -21,7 +21,8 @@ import {
   useTheme,
   MD3Theme
 } from 'react-native-paper';
-import { navigateBack, navigateToHome, handleSignOut } from '../../utils/navigation';
+import { navigateBack, navigateToHome } from '../../utils/navigation';
+import { useSupabase } from '../../context/SupabaseProvider';
 import { useAppTheme, useThemeMode } from '../../theme/ThemeProvider';
 
 // Define safe colors outside the component
@@ -60,6 +61,7 @@ export default function SettingsScreen() {
   const { colors } = useTheme();
   const appTheme = useAppTheme();
   const { theme, toggleTheme } = useThemeMode();
+  const { signOut } = useSupabase();
   
   // Create safe colors for this instance
   const safeColors = createSafeColors(appTheme);
@@ -114,9 +116,12 @@ export default function SettingsScreen() {
   const logStorage = 1.7;
   const logStoragePercent = Math.round((logStorage / storageTotal) * 100);
   
-  const getStorageSeverity = (percentage) => {
-    if (percentage < 0.5) return 'normal';
-    if (percentage < 0.8) return 'medium';
+  const getStorageSeverity = (percentage: number) => {
+    // Handle both decimal (0-1) and percentage (0-100) values
+    const normalizedPercentage = percentage > 1 ? percentage / 100 : percentage;
+    
+    if (normalizedPercentage < 0.5) return 'normal';
+    if (normalizedPercentage < 0.8) return 'medium';
     return 'high';
   };
   
@@ -403,8 +408,11 @@ export default function SettingsScreen() {
             titleStyle={{ color: safeColors.error }}
             descriptionStyle={{ color: safeColors.onSurfaceVariant }}
             left={props => <List.Icon {...props} icon="refresh" color={safeColors.error} />}
+            onPress={() => setResetDialogVisible(true)}
           />
           <Divider />
+          
+
           
           <List.Item
             title="Delete Account"
@@ -412,8 +420,21 @@ export default function SettingsScreen() {
             titleStyle={{ color: safeColors.error }}
             descriptionStyle={{ color: safeColors.onSurfaceVariant }}
             left={props => <List.Icon {...props} icon="delete" color={safeColors.error} />}
+            onPress={() => setAccountDialogVisible(true)}
           />
           <Divider />
+          
+          <List.Item
+            title="Log Out"
+            description="Sign out from your account"
+            titleStyle={{ color: safeColors.error }}
+            descriptionStyle={{ color: safeColors.onSurfaceVariant }}
+            left={props => <List.Icon {...props} icon="logout" color={safeColors.error} />}
+            onPress={signOut}
+          />
+          <Divider />
+          
+
         </List.Section>
       </ScrollView>
       
@@ -708,7 +729,7 @@ export default function SettingsScreen() {
       <Button 
         mode="outlined" 
         icon="logout" 
-        onPress={handleSignOut}
+        onPress={signOut}
         style={[styles.logoutButton, { borderColor: safeColors.error }]}
         textColor={safeColors.error}
         buttonColor={`${safeColors.error}10`}
@@ -772,4 +793,4 @@ const styles = StyleSheet.create({
     margin: 16,
     marginTop: 24,
   },
-}); 
+});

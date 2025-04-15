@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 // Import environment variables from .env file
 // import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@env';
 
@@ -20,6 +20,7 @@ interface SupabaseContextType {
   signUp: (email: string, password: string, userData?: any) => Promise<any>;
   signOut: () => Promise<any>;
   resetPassword: (email: string) => Promise<any>;
+  updateUserPassword: (password: string, token?: string) => Promise<any>;
 }
 
 // Create a default context
@@ -30,7 +31,8 @@ const SupabaseContext = createContext<SupabaseContextType>({
   signIn: async () => ({}),
   signUp: async () => ({}),
   signOut: async () => ({}),
-  resetPassword: async () => ({})
+  resetPassword: async () => ({}),
+  updateUserPassword: async (password: string, token?: string) => ({})
 });
 
 // Create a hook to use the context
@@ -61,7 +63,11 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: false,
+          detectSessionInUrl: true, // Enable detecting auth params in URL
+          flowType: 'pkce', // Use PKCE flow for better security
+          onAuthStateChange: (event) => {
+            console.log('Auth state change event:', event);
+          }
         },
       });
       setSupabase(client);
@@ -79,6 +85,10 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
           } else if (event === 'SIGNED_OUT') {
             // Redirect to welcome screen when signed out
             router.replace('/');
+          } else if (event === 'PASSWORD_RECOVERY') {
+            // Handle password recovery event - redirect to reset password confirm page
+            console.log('Password recovery event detected, redirecting to reset password page');
+            router.replace('/auth/reset-password-confirm');
           }
         }
       );
@@ -162,17 +172,68 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
   const resetPassword = async (email: string) => {
     if (!supabase) return { error: { message: 'Supabase client not initialized' } };
     try {
+      // Basic email validation to prevent the "invalid format" error
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return { error: { message: 'Please enter a valid email address' } };
+      }
+      
+      // Use the correct URL scheme format for deep linking
+      // Make sure this matches exactly with the scheme in app.json
+      const redirectUrl = 'homesafetyapp://auth/reset-password-confirm';
+      
+      console.log('Using redirect URL for password reset:', redirectUrl);
+      console.log('Resetting password for email:', email);
+      
+      // Ensure we're using the correct Supabase API call with proper options
       const response = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'homesafetyapp://auth/reset-password-confirm',
+        redirectTo: redirectUrl,
       });
       
       if (response.error) {
+        console.error('Password reset error:', response.error);
         return { error: response.error };
       }
       
+      // Provide user feedback about checking their email
+      Alert.alert(
+        "Password Reset Email Sent",
+        "Please check your email for a password reset link. Make sure to check your spam folder if you don't see it."
+      );
+      
+      console.log('Password reset email sent successfully');
       return response;
     } catch (error: any) {
+      console.error('Exception during password reset:', error);
       return { error: { message: error.message || 'An error occurred during password reset' } };
+    }
+  };
+
+  // Function to update user password (for password reset)
+  const updateUserPassword = async (password: string, token?: string) => {
+    if (!supabase) return { error: { message: 'Supabase client not initialized' } };
+    try {
+      console.log('Attempting to update user password');
+      
+      // The token should already be processed by the Supabase client when the deep link is opened
+      // We just need to update the password, and Supabase will use the current session
+      // (which includes the recovery token if this is a password reset flow)
+      console.log('Token present:', token ? 'Yes' : 'No');
+      
+      // Update the password - this works for both normal users and recovery flows
+      // as Supabase handles the session context automatically
+      const response = await supabase.auth.updateUser({ password });
+      
+      if (response.error) {
+        console.error('Error updating password:', response.error);
+        return { error: response.error };
+      }
+      
+      console.log('Password updated successfully');
+      return response;
+    } catch (error: any) {
+      console.error('Exception during password update:', error);
+      return { error: { message: error.message || 'An error occurred while updating password' } };
     }
   };
 
@@ -187,11 +248,13 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
         signUp,
         signOut,
         resetPassword,
+        updateUserPassword,
       }}
     >
       {children}
     </SupabaseContext.Provider>
   );
+
 };
 
 export default SupabaseProvider;
