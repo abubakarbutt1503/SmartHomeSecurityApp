@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
 import { router } from 'expo-router';
 import { Alert, Linking } from 'react-native';
@@ -65,8 +65,8 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
           autoRefreshToken: true,
           detectSessionInUrl: true, // Enable detecting auth params in URL
           flowType: 'pkce', // Use PKCE flow for better security
-          onAuthStateChange: (event) => {
-            console.log('Auth state change event:', event);
+          onAuthStateChange: (event: AuthChangeEvent, session: Session | null) => {
+            console.log('Auth state change event:', event, 'Session:', session ? 'Available' : 'None');
           }
         },
       });
@@ -74,7 +74,7 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
       
       // Subscribe to auth state changes
       const { data: { subscription } } = client.auth.onAuthStateChange(
-        (event, session) => {
+        (event: AuthChangeEvent, session: Session | null) => {
           setUser(session?.user || null);
           setLoading(false);
           
