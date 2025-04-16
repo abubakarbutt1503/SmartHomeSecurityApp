@@ -65,9 +65,7 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
           autoRefreshToken: true,
           detectSessionInUrl: true, // Enable detecting auth params in URL
           flowType: 'pkce', // Use PKCE flow for better security
-          onAuthStateChange: (event: AuthChangeEvent, session: Session | null) => {
-            console.log('Auth state change event:', event, 'Session:', session ? 'Available' : 'None');
-          }
+          
         },
       });
       setSupabase(client);
