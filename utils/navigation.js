@@ -48,6 +48,10 @@ export const navigateToBoundary = () => {
   router.push('/home/add-boundary');
 };
 
+export const navigateToEditProfile = () => {
+  router.push('/home/edit-profile');
+};
+
 // Common navigation functions
 export const navigateBack = () => {
   router.back();

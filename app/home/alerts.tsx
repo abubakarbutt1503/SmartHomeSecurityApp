@@ -142,6 +142,11 @@ const AlertItem = ({ alert, onPress }) => {
     background: theme?.colors?.background || '#F5F5F5',
     outline: theme?.colors?.outline || '#CCCCCC',
     surfaceVariant: theme?.colors?.surfaceVariant || '#EEEEEE',
+    onPrimary: theme?.colors?.onPrimary || '#FFFFFF',
+    onSecondary: theme?.colors?.onSecondary || '#FFFFFF',
+    onError: theme?.colors?.onError || '#FFFFFF',
+    onWarning: '#000000', // Black text on warning background
+    info: theme?.colors?.info || '#2196F3',
   };
   
   // Get color based on severity for this component
@@ -241,6 +246,11 @@ export default function AlertsScreen() {
     background: theme?.colors?.background || '#F5F5F5',
     outline: theme?.colors?.outline || '#CCCCCC',
     surfaceVariant: theme?.colors?.surfaceVariant || '#EEEEEE',
+    onPrimary: theme?.colors?.onPrimary || '#FFFFFF',
+    onSecondary: theme?.colors?.onSecondary || '#FFFFFF',
+    onError: theme?.colors?.onError || '#FFFFFF',
+    onWarning: '#000000', // Black text on warning background
+    info: theme?.colors?.info || '#2196F3',
   };
   
   // Get color based on severity
@@ -250,6 +260,7 @@ export default function AlertsScreen() {
       case 'high': return safeColors.error;
       case 'medium': return safeColors.warning;
       case 'low': return safeColors.success;
+      case 'info': return safeColors.info;
       default: return safeColors.primary;
     }
   };
@@ -333,72 +344,87 @@ export default function AlertsScreen() {
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filtersContainer}
+        style={styles.filtersScrollView}
       >
         <Chip 
           selected={severityFilter === 'all'}
           onPress={() => setSeverityFilter('all')}
-          style={{ 
+          style={[styles.filterChip, { 
             backgroundColor: severityFilter === 'all' 
               ? `${safeColors.primary}20` 
-              : safeColors.surfaceVariant 
-          }}
+              : safeColors.surfaceVariant,
+            borderColor: severityFilter === 'all' ? safeColors.primary : 'transparent',
+            borderWidth: 1
+          }]}
+          selectedColor={safeColors.primary}
         >
           All Severities
         </Chip>
         <Chip 
           selected={severityFilter === 'critical'}
           onPress={() => setSeverityFilter('critical')}
-          style={{ 
+          style={[styles.filterChip, { 
             backgroundColor: severityFilter === 'critical' 
               ? `${safeColors.error}20` 
-              : safeColors.surfaceVariant 
-          }}
+              : safeColors.surfaceVariant,
+            borderColor: severityFilter === 'critical' ? safeColors.error : 'transparent',
+            borderWidth: 1
+          }]}
+          selectedColor={safeColors.error}
         >
           Critical
         </Chip>
         <Chip 
           selected={severityFilter === 'high'}
           onPress={() => setSeverityFilter('high')}
-          style={{ 
+          style={[styles.filterChip, { 
             backgroundColor: severityFilter === 'high' 
-              ? `${safeColors.error}20` 
+              ? `${safeColors.error}30` 
               : safeColors.surfaceVariant 
-          }}
+          }]}
+          elevation={2}
+          selectedColor={safeColors.onSurface}
         >
           High
         </Chip>
         <Chip 
           selected={severityFilter === 'medium'}
           onPress={() => setSeverityFilter('medium')}
-          style={{ 
+          style={[styles.filterChip, { 
             backgroundColor: severityFilter === 'medium' 
-              ? `${safeColors.warning}20` 
+              ? `${safeColors.warning}30` 
               : safeColors.surfaceVariant 
-          }}
+          }]}
+          elevation={2}
+          selectedColor={safeColors.onSurface}
         >
           Medium
         </Chip>
         <Chip 
           selected={typeFilter === 'motion'}
           onPress={() => setTypeFilter(typeFilter === 'motion' ? 'all' : 'motion')}
-          style={{ 
+          style={[styles.filterChip, { 
             backgroundColor: typeFilter === 'motion' 
-              ? `${safeColors.secondary}20` 
+              ? `${safeColors.secondary}30` 
               : safeColors.surfaceVariant 
-          }}
+          }]}
           icon="motion-sensor"
+          elevation={2}
+          selectedColor={safeColors.onSurface}
         >
           Motion
         </Chip>
         <Chip 
           selected={typeFilter === 'door'}
           onPress={() => setTypeFilter(typeFilter === 'door' ? 'all' : 'door')}
-          style={{ 
+          style={[styles.filterChip, { 
             backgroundColor: typeFilter === 'door' 
-              ? `${safeColors.secondary}20` 
+              ? `${safeColors.secondary}30` 
               : safeColors.surfaceVariant 
-          }}
+          }]}
           icon="door"
+          elevation={2}
+          selectedColor={safeColors.onSurface}
         >
           Door
         </Chip>
@@ -571,10 +597,28 @@ const styles = StyleSheet.create({
   searchContainer: {
     padding: 16,
   },
+  filtersScrollView: {
+    marginVertical: 0, // Reduced from 4
+    paddingLeft: 8,
+  },
   filtersContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: 8,
+    paddingBottom: 2, // Reduced from 4
+    gap: 8,  // Consistent spacing between chips
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 2, // Reduced from 4
+  },
+  filterChip: {
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    minWidth: 90,  // Ensure consistent minimum width
+    height: 36,    // Consistent height
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    elevation: 1,
   },
   alertsList: {
     flex: 1,
@@ -601,4 +645,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     width: 80,
   },
-}); 
+});

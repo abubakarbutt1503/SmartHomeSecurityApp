@@ -21,7 +21,7 @@ import {
   useTheme,
   MD3Theme
 } from 'react-native-paper';
-import { navigateBack, navigateToHome } from '../../utils/navigation';
+import { navigateBack, navigateToHome, navigateToEditProfile } from '../../utils/navigation';
 import { useSupabase } from '../../context/SupabaseProvider';
 import { useAppTheme, useThemeMode } from '../../theme/ThemeProvider';
 
@@ -97,9 +97,10 @@ export default function SettingsScreen() {
   const [autoLockDialogVisible, setAutoLockDialogVisible] = useState(false);
   const [dataBackupDialogVisible, setDataBackupDialogVisible] = useState(false);
   
-  // Profile data (mock)
-  const profileName = 'John Doe';
-  const profileEmail = 'john.doe@example.com';
+  // Get user profile data from Supabase
+  const { user } = useSupabase();
+  const profileName = user?.user_metadata?.name || 'User';
+  const profileEmail = user?.email || '';
   
   // Storage data (mock)
   const storageTotal = 20; // GB
@@ -172,7 +173,12 @@ export default function SettingsScreen() {
             </View>
           </View>
           <Card.Actions>
-            <Button textColor={safeColors.primary}>Edit Profile</Button>
+            <Button 
+              textColor={safeColors.primary} 
+              onPress={() => navigateToEditProfile()}
+            >
+              Edit Profile
+            </Button>
             <Button textColor={safeColors.primary}>Manage Account</Button>
           </Card.Actions>
         </Card>

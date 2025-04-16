@@ -21,6 +21,8 @@ interface SupabaseContextType {
   signOut: () => Promise<any>;
   resetPassword: (email: string) => Promise<any>;
   updateUserPassword: (password: string, token?: string) => Promise<any>;
+  updateUserProfile: (data: { name?: string }) => Promise<any>;
+  updateUserEmail: (email: string) => Promise<any>;
 }
 
 // Create a default context
@@ -32,7 +34,9 @@ const SupabaseContext = createContext<SupabaseContextType>({
   signUp: async () => ({}),
   signOut: async () => ({}),
   resetPassword: async () => ({}),
-  updateUserPassword: async (password: string, token?: string) => ({})
+  updateUserPassword: async (password: string, token?: string) => ({}),
+  updateUserProfile: async (data: { name?: string }) => ({}),
+  updateUserEmail: async (email: string) => ({})
 });
 
 // Create a hook to use the context
@@ -111,12 +115,32 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
   const signIn = async (email: string, password: string) => {
     if (!supabase) return { error: { message: 'Supabase client not initialized' } };
     try {
+      console.log('Attempting to sign in user:', email);
+      
+      // Basic validation
+      if (!email.trim()) {
+        return { error: { message: 'Email is required' } };
+      }
+      
+      if (!password.trim()) {
+        return { error: { message: 'Password is required' } };
+      }
+      
       const response = await supabase.auth.signInWithPassword({ email, password });
+      
       if (response.error) {
+        console.error('Sign in error:', response.error);
+        // Provide more user-friendly error messages
+        if (response.error.message.includes('Invalid login credentials')) {
+          return { error: { message: 'Invalid email or password. Please try again.' } };
+        }
         return { error: response.error };
       }
+      
+      console.log('User signed in successfully');
       return response;
     } catch (error: any) {
+      console.error('Exception during sign in:', error);
       return { error: { message: error.message || 'An error occurred during sign in' } };
     }
   };
@@ -124,16 +148,37 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
   const signUp = async (email: string, password: string, userData?: any) => {
     if (!supabase) return { error: { message: 'Supabase client not initialized' } };
     try {
+      // Ensure userData has the correct format
+      const userMetadata: { [key: string]: any } = {};
+      
+      // Process user data safely
+      if (userData) {
+        // Add name to metadata if provided
+        if (userData.full_name) {
+          userMetadata['name'] = userData.full_name;
+        }
+        
+        // Add any other user data fields
+        Object.keys(userData).forEach(key => {
+          if (key !== 'full_name' && userData[key] !== undefined && userData[key] !== null) {
+            userMetadata[key] = userData[key];
+          }
+        });
+      }
+      
+      console.log('Signing up user with metadata:', userMetadata);
+      
       const response = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          data: userData,
+          data: userMetadata,
           emailRedirectTo: 'homesafetyapp://auth/callback',
         },
       });
       
       if (response.error) {
+        console.error('Signup error:', response.error);
         return { error: response.error };
       }
       
@@ -143,6 +188,8 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
           "Email Verification Required",
           "Please check your email to verify your account before logging in."
         );
+      } else if (response.data?.user && response.data?.session) {
+        console.log('User signed up and authenticated successfully');
       }
       
       return response;
@@ -235,6 +282,66 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
     }
   };
 
+  // Function to update user profile (name only)
+  const updateUserProfile = async (data: { name?: string }) => {
+    if (!supabase) return { error: { message: 'Supabase client not initialized' } };
+    try {
+      console.log('Updating user profile with data:', data);
+      
+      // Update user metadata with the new name
+      const response = await supabase.auth.updateUser({
+        data: data
+      });
+      
+      if (response.error) {
+        console.error('Error updating user profile:', response.error);
+        return { error: response.error };
+      }
+      
+      console.log('User profile updated successfully');
+      return response;
+    } catch (error: any) {
+      console.error('Exception during profile update:', error);
+      return { error: { message: error.message || 'An error occurred while updating profile' } };
+    }
+  };
+
+  // Function to update user email with verification
+  const updateUserEmail = async (email: string) => {
+    if (!supabase) return { error: { message: 'Supabase client not initialized' } };
+    try {
+      console.log('Requesting email update to:', email);
+      
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return { error: { message: 'Please enter a valid email address' } };
+      }
+      
+      // Update user email - this will trigger a verification email
+      const response = await supabase.auth.updateUser({
+        email: email,
+      });
+      
+      if (response.error) {
+        console.error('Error updating email:', response.error);
+        return { error: response.error };
+      }
+      
+      // Provide user feedback about checking their email
+      Alert.alert(
+        "Email Verification Required",
+        "Please check your email for a verification link. Your email will be updated after verification."
+      );
+      
+      console.log('Email update verification sent successfully');
+      return response;
+    } catch (error: any) {
+      console.error('Exception during email update:', error);
+      return { error: { message: error.message || 'An error occurred while updating email' } };
+    }
+  };
+
   // Provide the Supabase context to the app
   return (
     <SupabaseContext.Provider
@@ -247,6 +354,8 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
         signOut,
         resetPassword,
         updateUserPassword,
+        updateUserProfile,
+        updateUserEmail,
       }}
     >
       {children}
