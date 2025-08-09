@@ -3,6 +3,7 @@ import { createClient, SupabaseClient, Session, AuthChangeEvent } from '@supabas
 import 'react-native-url-polyfill/auto';
 import { router } from 'expo-router';
 import { Alert, Linking } from 'react-native';
+import { isNetworkConnected, isServerReachable } from '../utils/networkUtils';
 // Import environment variables from .env file
 // import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@env';
 
@@ -125,12 +126,38 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
       if (!password.trim()) {
         return { error: { message: 'Password is required' } };
       }
+
+      // Check network connectivity first
+      const isConnected = await isNetworkConnected();
+      if (!isConnected) {
+        return { error: { message: 'No internet connection. Please check your network settings and try again.' } };
+      }
+      
+      // Check if Supabase server is reachable with retries
+      let isSupabaseReachable = false;
+      let retries = 3;
+      
+      while (retries > 0 && !isSupabaseReachable) {
+        isSupabaseReachable = await isServerReachable(SUPABASE_URL);
+        if (!isSupabaseReachable) {
+          console.log(`Supabase server not reachable, retrying... (${retries} attempts left)`);
+          retries--;
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
+        }
+      }
+      
+      if (!isSupabaseReachable) {
+        return { error: { message: 'Unable to connect to the authentication server. Please check your internet connection and try again.' } };
+      }
       
       const response = await supabase.auth.signInWithPassword({ email, password });
       
       if (response.error) {
         console.error('Sign in error:', response.error);
         // Provide more user-friendly error messages
+        if (response.error.message.includes('Failed to fetch')) {
+          return { error: { message: 'Network error. Please check your internet connection and try again.' } };
+        }
         if (response.error.message.includes('Invalid login credentials')) {
           return { error: { message: 'Invalid email or password. Please try again.' } };
         }
@@ -141,6 +168,9 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
       return response;
     } catch (error: any) {
       console.error('Exception during sign in:', error);
+      if (error.message && error.message.includes('fetch')) {
+        return { error: { message: 'Network error. Please check your internet connection and try again.' } };
+      }
       return { error: { message: error.message || 'An error occurred during sign in' } };
     }
   };

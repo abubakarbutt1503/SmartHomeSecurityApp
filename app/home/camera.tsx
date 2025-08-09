@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, View, ScrollView, Dimensions, Modal, Platform } from 'react-native';
 import { 
   Appbar, 
   Text, 
@@ -12,6 +12,7 @@ import {
 } from 'react-native-paper';
 import { navigateBack, navigateToHome } from '../../utils/navigation';
 import { useAppTheme } from '../../theme/ThemeProvider';
+import YoloCamera from '../components/YoloCamera';
 
 // Mock camera data
 const CAMERAS = [
@@ -24,6 +25,7 @@ const CAMERAS = [
 const CameraCard = ({ camera }) => {
   const { theme } = useAppTheme();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showYoloCamera, setShowYoloCamera] = useState(false);
   
   return (
     <Card 
@@ -76,8 +78,11 @@ const CameraCard = ({ camera }) => {
                 icon="video" 
                 size={40} 
                 iconColor={theme.colors.primary}
+                onPress={() => setShowYoloCamera(true)}
               />
-              <Text style={{ color: theme.colors.onSurfaceVariant }}>Live feed placeholder</Text>
+              <Text style={{ color: theme.colors.onSurfaceVariant }}>
+                Tap to view live feed with YOLO detection
+              </Text>
             </>
           ) : (
             <>
@@ -97,6 +102,7 @@ const CameraCard = ({ camera }) => {
           icon="video" 
           disabled={!camera.online}
           iconColor={camera.online ? theme.colors.primary : theme.colors.onSurfaceVariant}
+          onPress={() => setShowYoloCamera(true)}
         />
         <IconButton 
           icon={camera.recording ? "stop-circle" : "record-circle"} 
@@ -113,6 +119,16 @@ const CameraCard = ({ camera }) => {
           iconColor={theme.colors.primary}
         />
       </Card.Actions>
+
+      {/* YOLO Camera Modal */}
+      <Modal
+        visible={showYoloCamera}
+        onRequestClose={() => setShowYoloCamera(false)}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        <YoloCamera onClose={() => setShowYoloCamera(false)} />
+      </Modal>
     </Card>
   );
 };

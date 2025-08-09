@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { StyleSheet, View, Image, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { Button, Text, TextInput, Surface, IconButton, HelperText } from 'react-native-paper';
 import { useAppTheme } from '../../theme/ThemeProvider';
 import { useSupabase } from '../../context/SupabaseProvider';
@@ -21,11 +21,30 @@ export default function LoginScreen() {
       const { data, error: signInError } = await signIn(email, password);
       if (signInError) {
         setError(signInError.message);
+        if (signInError.message.includes('Network error') || signInError.message.includes('Unable to connect')) {
+          // Handle network errors
+          console.error('Network error during login:', signInError);
+          Alert.alert(
+            "Network Error",
+            "Unable to connect to the server. Please check your internet connection and try again.",
+            [{ text: "OK" }]
+          );
+        }
       } else {
         navigateToHome();
       }
     } catch (error: any) {
-      setError(error.message || 'An error occurred during login');
+      console.error('Login error:', error);
+      if (error.message && (error.message.includes('fetch') || error.message.includes('network'))) {
+        setError('Network error. Please check your internet connection.');
+        Alert.alert(
+          "Connection Error",
+          "Failed to connect to the server. Please check your internet connection and try again.",
+          [{ text: "OK" }]
+        );
+      } else {
+        setError(error.message || 'An error occurred during login');
+      }
     } finally {
       setLoading(false);
     }
