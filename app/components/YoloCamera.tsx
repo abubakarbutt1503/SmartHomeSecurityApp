@@ -12,8 +12,10 @@ import {
   Linking,
   ScrollView
 } from 'react-native';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export default function YoloCamera() {
+  const { theme } = useAppTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isStreamActive, setIsStreamActive] = useState(false);
@@ -127,11 +129,11 @@ export default function YoloCamera() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.colors.background} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.onBackground }]}>
             {serverStatus === 'checking' ? 'Checking server connection...' : 'Processing...'}
           </Text>
         </View>
@@ -141,35 +143,41 @@ export default function YoloCamera() {
 
   if (hasError) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.colors.background} />
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.errorContainer}>
-            <Text style={styles.errorTitle}>Connection Error</Text>
-            <Text style={styles.errorMessage}>
+            <Text style={[styles.errorTitle, { color: theme.colors.error }]}>Connection Error</Text>
+            <Text style={[styles.errorMessage, { color: theme.colors.onBackground }]}>
               Unable to connect to the video stream server.
             </Text>
-            <Text style={styles.errorDetails}>
+            <Text style={[styles.errorDetails, { color: theme.colors.onSurfaceVariant }]}>
               Make sure the Flask server is running at:{'\n'}
               {SERVER_URL}
             </Text>
             
             <View style={styles.errorButtons}>
-              <TouchableOpacity style={styles.retryButton} onPress={retryConnection}>
-                <Text style={styles.retryButtonText}>Retry Connection</Text>
+              <TouchableOpacity 
+                style={[styles.retryButton, { backgroundColor: theme.colors.primary }]} 
+                onPress={retryConnection}
+              >
+                <Text style={[styles.retryButtonText, { color: theme.colors.onPrimary }]}>Retry Connection</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity style={styles.browserButton} onPress={openInBrowser}>
-                <Text style={styles.browserButtonText}>Open in Browser</Text>
+              <TouchableOpacity 
+                style={[styles.browserButton, { backgroundColor: theme.colors.secondary }]} 
+                onPress={openInBrowser}
+              >
+                <Text style={[styles.browserButtonText, { color: theme.colors.onSecondary }]}>Open in Browser</Text>
               </TouchableOpacity>
             </View>
             
-            <View style={styles.helpSection}>
-              <Text style={styles.helpTitle}>Troubleshooting:</Text>
-              <Text style={styles.helpText}>1. Check if your PC and phone are on the same network</Text>
-              <Text style={styles.helpText}>2. Verify the IP address is correct</Text>
-              <Text style={styles.helpText}>3. Make sure the Flask server is running</Text>
-              <Text style={styles.helpText}>4. Check if port 5000 is accessible</Text>
+            <View style={[styles.helpSection, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outline }]}>
+              <Text style={[styles.helpTitle, { color: theme.colors.onSurface }]}>Troubleshooting:</Text>
+              <Text style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>1. Check if your PC and phone are on the same network</Text>
+              <Text style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>2. Verify the IP address is correct</Text>
+              <Text style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>3. Make sure the Flask server is running</Text>
+              <Text style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>4. Check if port 5000 is accessible</Text>
             </View>
           </View>
         </ScrollView>
@@ -178,15 +186,15 @@ export default function YoloCamera() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.colors.background} />
       
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>YOLO Camera</Text>
+      <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.outline }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>YOLO Camera</Text>
         <View style={styles.statusIndicator}>
-          <View style={[styles.statusDot, { backgroundColor: isStreamActive ? '#28a745' : '#dc3545' }]} />
-          <Text style={styles.statusText}>
+          <View style={[styles.statusDot, { backgroundColor: isStreamActive ? theme.colors.secondary : theme.colors.error }]} />
+          <Text style={[styles.statusText, { color: theme.colors.onSurface }]}>
             {isStreamActive ? 'Streaming' : 'Stopped'}
           </Text>
         </View>
@@ -195,69 +203,87 @@ export default function YoloCamera() {
       {/* Main Content */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Stream Controls */}
-        <View style={styles.controlsSection}>
-          <Text style={styles.sectionTitle}>Stream Controls</Text>
+        <View style={[styles.controlsSection, { borderBottomColor: theme.colors.outline }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>Stream Controls</Text>
           <View style={styles.controls}>
             <TouchableOpacity 
-              style={[styles.controlButton, isStreamActive && styles.controlButtonActive]} 
+              style={[
+                styles.controlButton, 
+                { 
+                  backgroundColor: isStreamActive ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+                  borderColor: theme.colors.outline
+                }
+              ]} 
               onPress={startStream}
               disabled={isStreamActive || isLoading}
             >
-              <Text style={styles.controlButtonText}>Start Stream</Text>
+              <Text style={[styles.controlButtonText, { color: theme.colors.onSurface }]}>Start Stream</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.controlButton, !isStreamActive && styles.controlButtonActive]} 
+              style={[
+                styles.controlButton, 
+                { 
+                  backgroundColor: !isStreamActive ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+                  borderColor: theme.colors.outline
+                }
+              ]} 
               onPress={stopStream}
               disabled={!isStreamActive || isLoading}
             >
-              <Text style={styles.controlButtonText}>Stop Stream</Text>
+              <Text style={[styles.controlButtonText, { color: theme.colors.onSurface }]}>Stop Stream</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Stream Access */}
-        <View style={styles.accessSection}>
-          <Text style={styles.sectionTitle}>Access Video Stream</Text>
+        <View style={[styles.accessSection, { borderBottomColor: theme.colors.outline }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>Access Video Stream</Text>
           
-          <TouchableOpacity style={styles.accessButton} onPress={openVideoFeedInBrowser}>
-            <Text style={styles.accessButtonText}>Open Video Feed</Text>
-            <Text style={styles.accessButtonSubtext}>View real-time YOLO detection</Text>
+          <TouchableOpacity 
+            style={[styles.accessButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]} 
+            onPress={openVideoFeedInBrowser}
+          >
+            <Text style={[styles.accessButtonText, { color: theme.colors.onSurface }]}>Open Video Feed</Text>
+            <Text style={[styles.accessButtonSubtext, { color: theme.colors.onSurfaceVariant }]}>View real-time YOLO detection</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.accessButton} onPress={openWebInterface}>
-            <Text style={styles.accessButtonText}>Open Web Interface</Text>
-            <Text style={styles.accessButtonSubtext}>Full control panel with video</Text>
+          <TouchableOpacity 
+            style={[styles.accessButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]} 
+            onPress={openWebInterface}
+          >
+            <Text style={[styles.accessButtonText, { color: theme.colors.onSurface }]}>Open Web Interface</Text>
+            <Text style={[styles.accessButtonSubtext, { color: theme.colors.onSurfaceVariant }]}>Full control panel with video</Text>
           </TouchableOpacity>
         </View>
 
         {/* Server Information */}
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Server Information</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Status:</Text>
-            <Text style={[styles.infoValue, { color: isStreamActive ? '#28a745' : '#dc3545' }]}>
+        <View style={[styles.infoSection, { borderBottomColor: theme.colors.outline }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>Server Information</Text>
+          <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+            <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>Status:</Text>
+            <Text style={[styles.infoValue, { color: isStreamActive ? theme.colors.secondary : theme.colors.error }]}>
               {isStreamActive ? 'Active' : 'Inactive'}
             </Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Server:</Text>
-            <Text style={styles.infoValue}>{SERVER_URL}</Text>
+          <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+            <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>Server:</Text>
+            <Text style={[styles.infoValue, { color: theme.colors.onSurface }]}>{SERVER_URL}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Model:</Text>
-            <Text style={styles.infoValue}>YOLOv5s</Text>
+          <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+            <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>Model:</Text>
+            <Text style={[styles.infoValue, { color: theme.colors.onSurface }]}>YOLOv5s</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Source:</Text>
-            <Text style={styles.infoValue}>Webcam (0)</Text>
+          <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+            <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>Source:</Text>
+            <Text style={[styles.infoValue, { color: theme.colors.onSurface }]}>Webcam (0)</Text>
           </View>
         </View>
 
         {/* Instructions */}
         <View style={styles.instructionsSection}>
-          <Text style={styles.sectionTitle}>How to Use</Text>
-          <Text style={styles.instructionText}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>How to Use</Text>
+          <Text style={[styles.instructionText, { color: theme.colors.onSurfaceVariant }]}>
             1. Press "Start Stream" to begin video processing{'\n'}
             2. Use "Open Video Feed" to view the stream{'\n'}
             3. Use "Open Web Interface" for full control{'\n'}
@@ -272,7 +298,6 @@ export default function YoloCamera() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
   },
   header: {
     flexDirection: 'row',
@@ -280,14 +305,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#1a1a1a',
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
   },
   statusIndicator: {
     flexDirection: 'row',
@@ -300,7 +322,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusText: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -311,10 +332,8 @@ const styles = StyleSheet.create({
   controlsSection: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
   sectionTitle: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
@@ -328,48 +347,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#333',
     borderWidth: 1,
-    borderColor: '#555',
     minWidth: 120,
     alignItems: 'center',
   },
-  controlButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
   controlButtonText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 14,
   },
   accessSection: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
   accessButton: {
-    backgroundColor: '#2c2c2c',
     padding: 20,
     borderRadius: 12,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#444',
   },
   accessButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 5,
   },
   accessButtonSubtext: {
-    color: '#888',
     fontSize: 14,
   },
   infoSection: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
   infoRow: {
     flexDirection: 'row',
@@ -377,14 +383,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
   infoLabel: {
-    color: '#888',
     fontSize: 14,
   },
   infoValue: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -392,7 +395,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   instructionText: {
-    color: '#ccc',
     fontSize: 14,
     lineHeight: 22,
   },
@@ -400,10 +402,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
   },
   loadingText: {
-    color: '#fff',
     fontSize: 16,
     marginTop: 15,
     textAlign: 'center',
@@ -416,21 +416,18 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   errorTitle: {
-    color: '#ff3b30',
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
   },
   errorMessage: {
-    color: '#fff',
     fontSize: 16,
     marginBottom: 15,
     textAlign: 'center',
     lineHeight: 24,
   },
   errorDetails: {
-    color: '#888',
     fontSize: 14,
     marginBottom: 30,
     textAlign: 'center',
@@ -444,42 +441,34 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
   browserButton: {
-    backgroundColor: '#28a745',
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 8,
   },
   browserButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
   helpSection: {
-    backgroundColor: '#1a1a1a',
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#333',
   },
   helpTitle: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 15,
   },
   helpText: {
-    color: '#ccc',
     fontSize: 14,
     marginBottom: 8,
     lineHeight: 20,
