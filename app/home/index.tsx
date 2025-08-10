@@ -19,7 +19,6 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppTheme } from '../../theme/ThemeProvider';
 import { 
-  navigateToDevices, 
   navigateToAlerts, 
   navigateToSettings,
   navigateToCamera,
@@ -27,11 +26,7 @@ import {
 } from '../../utils/navigation';
 import { 
   toggleSystemArming, 
-  refreshSystemStatus, 
-  triggerPanicAlarm, 
-  lockAllDevices, 
-  recordAllCameras, 
-  testAlarms 
+  refreshSystemStatus
 } from '../../utils/dashboardFunctions';
 
 export default function Home() {
@@ -43,11 +38,7 @@ export default function Home() {
   const [systemStatus, setSystemStatus] = useState('Normal');
   const [lastCheck, setLastCheck] = useState('2 minutes ago');
   const [batteryLevel, setBatteryLevel] = useState(75);
-  const [deviceStatus, setDeviceStatus] = useState({ online: 6, offline: 1, total: 7 });
   const [unreadAlerts, setUnreadAlerts] = useState(2);
-  
-  // Calculate the online device percentage
-  const onlineDevicePercentage = deviceStatus.online / deviceStatus.total;
   
   // Mock data for recent alerts
   const recentAlerts = [
@@ -246,20 +237,7 @@ export default function Home() {
               </Card.Content>
             </Card>
             
-            <Card 
-              style={{ ...styles.quickAccessCard, backgroundColor: theme.colors.surface }}
-              onPress={navigateToDevices}
-            >
-              <Card.Content style={styles.quickAccessContent}>
-                <Avatar.Icon 
-                  icon="devices" 
-                  size={48} 
-                  style={{ backgroundColor: theme.colors.primary ? theme.colors.primary + '33' : '#00000033' }}
-                  color={theme.colors.primary}
-                />
-                <Text style={{ color: theme.colors.onSurface, marginTop: 8 }}>Devices</Text>
-              </Card.Content>
-            </Card>
+
             
             <Card 
               style={{ ...styles.quickAccessCard, backgroundColor: theme.colors.surface }}
@@ -305,62 +283,7 @@ export default function Home() {
             </Card>
           </View>
           
-          {/* Device Status Card */}
-          <Card 
-            style={{ ...styles.card, backgroundColor: theme.colors.surface }}
-            onPress={navigateToDevices}
-          >
-            <Card.Title 
-              title="Device Status" 
-              titleStyle={{ color: theme.colors.onSurface }}
-              subtitle={`${deviceStatus.online} / ${deviceStatus.total} devices online`}
-              subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
-              right={(props) => (
-                <IconButton 
-                  {...props} 
-                  icon="chevron-right" 
-                  iconColor={theme.colors.primary}
-                  onPress={navigateToDevices}
-                />
-              )}
-            />
-            
-            <Card.Content>
-              <ProgressBar 
-                progress={onlineDevicePercentage} 
-                color={
-                  onlineDevicePercentage > 0.8 
-                    ? theme.colors.success 
-                    : onlineDevicePercentage > 0.5 
-                      ? theme.colors.warning 
-                      : theme.colors.error
-                }
-                style={styles.deviceProgress}
-              />
-              
-              <View style={styles.deviceStatusRow}>
-                <View style={styles.deviceStatusItem}>
-                  <View 
-                    style={[
-                      styles.statusIndicator, 
-                      { backgroundColor: theme.colors.success }
-                    ]} 
-                  />
-                  <Text style={{ color: theme.colors.onSurface }}>{deviceStatus.online} Online</Text>
-                </View>
-                
-                <View style={styles.deviceStatusItem}>
-                  <View 
-                    style={[
-                      styles.statusIndicator, 
-                      { backgroundColor: theme.colors.error }
-                    ]} 
-                  />
-                  <Text style={{ color: theme.colors.onSurface }}>{deviceStatus.offline} Offline</Text>
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
+
           
           {/* Recent Alerts Card */}
           <Card 
@@ -419,85 +342,7 @@ export default function Home() {
             </Card.Content>
           </Card>
           
-          {/* Quick Actions Card */}
-          <Card style={{ ...styles.card, backgroundColor: theme.colors.surface }}>
-            <Card.Title 
-              title="Quick Actions" 
-              titleStyle={{ color: theme.colors.onSurface }}
-            />
-            
-            <Card.Content>
-              <View style={styles.quickActionsGrid}>
-                <Card 
-                  style={{ ...styles.actionCard, backgroundColor: theme.colors.surfaceVariant }}
-                  onPress={triggerPanicAlarm}
-                >
-                  <Card.Content style={styles.actionContent}>
-                    <IconButton 
-                      icon="alarm-light" 
-                      iconColor={theme.colors.error}
-                      size={40}
-                      onPress={triggerPanicAlarm}
-                    />
-                    <Text style={{ color: theme.colors.error, textAlign: 'center' }}>
-                      Panic Alarm
-                    </Text>
-                  </Card.Content>
-                </Card>
-                
-                <Card 
-                  style={{ ...styles.actionCard, backgroundColor: theme.colors.surfaceVariant }}
-                  onPress={lockAllDevices}
-                >
-                  <Card.Content style={styles.actionContent}>
-                    <IconButton 
-                      icon="lock" 
-                      iconColor={theme.colors.primary}
-                      size={40}
-                      onPress={lockAllDevices}
-                    />
-                    <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-                      Lock All
-                    </Text>
-                  </Card.Content>
-                </Card>
-                
-                <Card 
-                  style={{ ...styles.actionCard, backgroundColor: theme.colors.surfaceVariant }}
-                  onPress={recordAllCameras}
-                >
-                  <Card.Content style={styles.actionContent}>
-                    <IconButton 
-                      icon="record-rec" 
-                      iconColor={theme.colors.error}
-                      size={40}
-                      onPress={recordAllCameras}
-                    />
-                    <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-                      Record All
-                    </Text>
-                  </Card.Content>
-                </Card>
-                
-                <Card 
-                  style={{ ...styles.actionCard, backgroundColor: theme.colors.surfaceVariant }}
-                  onPress={testAlarms}
-                >
-                  <Card.Content style={styles.actionContent}>
-                    <IconButton 
-                      icon="alarm-check" 
-                      iconColor={theme.colors.primary}
-                      size={40}
-                      onPress={testAlarms}
-                    />
-                    <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-                      Test Alarms
-                    </Text>
-                  </Card.Content>
-                </Card>
-              </View>
-            </Card.Content>
-          </Card>
+
         </ScrollView>
         
         <FAB
@@ -606,19 +451,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
   },
-  deviceProgress: {
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  deviceStatusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  deviceStatusItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+
   alertItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -635,20 +468,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderRadius: 20,
   },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  actionCard: {
-    width: '48%',
-    marginBottom: 12,
-    borderRadius: 8,
-  },
-  actionContent: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
+
   fab: {
     position: 'absolute',
     margin: 16,

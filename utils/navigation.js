@@ -24,10 +24,6 @@ export const navigateToHome = () => {
 };
 
 // Home tab screens navigation
-export const navigateToDevices = () => {
-  router.push('/home/devices');
-};
-
 export const navigateToAlerts = () => {
   router.push('/home/alerts');
 };
