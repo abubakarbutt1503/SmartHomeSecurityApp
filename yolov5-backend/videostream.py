@@ -9,6 +9,7 @@ import logging
 from typing import Optional, Tuple, List, Dict, Any
 import json
 import os
+from roi_detection import ROIDetector
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -33,10 +34,15 @@ class YOLOVideoStream:
         self.is_running = False
         self.current_frame = None
         self.detection_results = []
+        self.roi_results = []
         self.lock = threading.Lock()
         
         # Initialize YOLO model
         self._load_model()
+        
+        # Initialize ROI detector
+        self.roi_detector = ROIDetector()
+        self.roi_detection_enabled = True
         
         # Stream configuration
         self.fps = 30
@@ -141,10 +147,14 @@ class YOLOVideoStream:
                 # Process frame with YOLO
                 processed_frame, detections = self._detect_objects(frame)
                 
+                # Process frame with ROI detection
+                final_frame, alert_triggered, roi_detections = self._detect_roi(processed_frame, detections)
+                
                 # Update current frame and results
                 with self.lock:
-                    self.current_frame = processed_frame
+                    self.current_frame = final_frame
                     self.detection_results = detections
+                    self.roi_results = roi_detections
                 
                 # Control FPS
                 time.sleep(1.0 / self.fps)
@@ -176,6 +186,30 @@ class YOLOVideoStream:
         except Exception as e:
             logger.error(f"Object detection failed: {e}")
             return frame, []
+    
+    def _detect_roi(self, frame: np.ndarray, yolo_results: List[Dict]) -> Tuple[np.ndarray, bool, List[Dict]]:
+        """
+        Detect humans in ROI shapes
+        
+        Args:
+            frame: Input frame
+            yolo_results: YOLO detection results
+            
+        Returns:
+            Tuple of (processed_frame, alert_triggered, roi_results)
+        """
+        try:
+            if not self.roi_detection_enabled:
+                return frame, False, []
+            
+            # Use ROI detector to process frame
+            processed_frame, alert_triggered, roi_results = self.roi_detector.detect_humans_in_roi(frame, yolo_results)
+            
+            return processed_frame, alert_triggered, roi_results
+            
+        except Exception as e:
+            logger.error(f"ROI detection failed: {e}")
+            return frame, False, []
     
     def _detect_pytorch(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict]]:
         """Detect objects using PyTorch YOLO model"""
@@ -355,6 +389,41 @@ class YOLOVideoStream:
         """Get current detection results"""
         with self.lock:
             return self.detection_results.copy()
+    
+    def get_roi_results(self) -> List[Dict]:
+        """Get current ROI detection results"""
+        with self.lock:
+            return self.roi_results.copy()
+    
+    def set_roi_detection_enabled(self, enabled: bool):
+        """Enable or disable ROI detection"""
+        self.roi_detection_enabled = enabled
+        logger.info(f"ROI detection {'enabled' if enabled else 'disabled'}")
+    
+    def get_roi_status(self) -> Dict:
+        """Get current ROI detection status"""
+        return self.roi_detector.get_status()
+    
+    def clear_roi_shapes(self):
+        """Clear all ROI shapes"""
+        self.roi_detector.clear_shapes()
+    
+    def remove_last_roi_shape(self):
+        """Remove the last drawn ROI shape"""
+        self.roi_detector.remove_last_shape()
+    
+    def set_selected_roi_shape(self, shape_type: str):
+        """Set the selected shape type for drawing"""
+        self.roi_detector.set_selected_shape(shape_type)
+
+    def handle_roi_draw_event(self, event_type: str, x: int, y: int):
+        """Handle drawing events from web interface"""
+        # Use the new web draw event handler
+        self.roi_detector.handle_web_draw_event(event_type, x, y)
+
+    def get_roi_shapes(self):
+        """Get current shapes for drawing preview"""
+        return self.roi_detector.get_shapes()
     
     def set_fps(self, fps: int):
         """Set target FPS"""

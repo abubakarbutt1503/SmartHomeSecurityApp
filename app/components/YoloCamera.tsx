@@ -10,7 +10,8 @@ import {
   SafeAreaView,
   StatusBar,
   Linking,
-  ScrollView
+  ScrollView,
+  Platform
 } from 'react-native';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
@@ -20,6 +21,14 @@ export default function YoloCamera() {
   const [hasError, setHasError] = useState(false);
   const [isStreamActive, setIsStreamActive] = useState(false);
   const [serverStatus, setServerStatus] = useState('checking');
+  const [roiDetectionEnabled, setRoiDetectionEnabled] = useState(true);
+  const [detectionStats, setDetectionStats] = useState({
+    objectCount: 0,
+    roiCount: 0,
+    detectedObjects: [],
+    roiAlertTriggered: false,
+    selectedRoiShape: null
+  });
   
   // Use your PC's IP address here - make sure it matches the Flask server
   const SERVER_URL = 'http://192.168.100.35:5000';
@@ -44,6 +53,15 @@ export default function YoloCamera() {
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
           setIsStreamActive(statusData.is_streaming);
+          if (statusData.object_count !== undefined) {
+            setDetectionStats({
+              objectCount: statusData.object_count || 0,
+              roiCount: statusData.roi_count || 0,
+              detectedObjects: statusData.detected_objects || [],
+              roiAlertTriggered: statusData.roi_alert_triggered || false,
+              selectedRoiShape: statusData.selected_roi_shape || null
+            });
+          }
         }
       } else {
         setHasError(true);
@@ -125,6 +143,51 @@ export default function YoloCamera() {
 
   const openWebInterface = () => {
     Linking.openURL(CONTROL_URL);
+  };
+
+  const toggleRoiDetection = async () => {
+    try {
+      const endpoint = roiDetectionEnabled ? 'disable' : 'enable';
+      const response = await fetch(`${SERVER_URL}/roi_detection/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (response.ok) {
+        setRoiDetectionEnabled(!roiDetectionEnabled);
+        Alert.alert(
+          'ROI Detection', 
+          `ROI detection ${roiDetectionEnabled ? 'disabled' : 'enabled'} successfully`
+        );
+      } else {
+        Alert.alert('Error', 'Failed to toggle ROI detection');
+      }
+    } catch (error) {
+      console.error('Error toggling ROI detection:', error);
+      Alert.alert('Error', 'Failed to toggle ROI detection');
+    }
+  };
+
+  const refreshDetectionStats = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/detections`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setDetectionStats({
+            objectCount: data.objects.length,
+            roiCount: data.roi_status?.shapes_count || 0,
+            detectedObjects: data.objects.map((obj: any) => obj.class_name),
+            roiAlertTriggered: data.roi_status?.alert_triggered || false,
+            selectedRoiShape: data.roi_status?.selected_shape || null
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing detection stats:', error);
+    }
   };
 
   if (isLoading) {
@@ -236,6 +299,72 @@ export default function YoloCamera() {
           </View>
         </View>
 
+        {/* ROI Detection Controls */}
+        <View style={[styles.controlsSection, { borderBottomColor: theme.colors.outline }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>ROI Detection</Text>
+          <View style={styles.controls}>
+            <TouchableOpacity 
+              style={[
+                styles.controlButton, 
+                { 
+                  backgroundColor: roiDetectionEnabled ? theme.colors.secondary : theme.colors.surfaceVariant,
+                  borderColor: theme.colors.outline
+                }
+              ]} 
+              onPress={toggleRoiDetection}
+              disabled={!isStreamActive}
+            >
+              <Text style={[styles.controlButtonText, { color: roiDetectionEnabled ? theme.colors.onSecondary : theme.colors.onSurface }]}>
+                {roiDetectionEnabled ? 'Disable ROI' : 'Enable ROI'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[
+                styles.controlButton, 
+                { 
+                  backgroundColor: theme.colors.surfaceVariant,
+                  borderColor: theme.colors.outline
+                }
+              ]} 
+              onPress={refreshDetectionStats}
+              disabled={!isStreamActive}
+            >
+              <Text style={[styles.controlButtonText, { color: theme.colors.onSurface }]}>Refresh Stats</Text>
+            </TouchableOpacity>
+          </View>
+          
+                      <TouchableOpacity
+              style={[styles.controlButton, { backgroundColor: theme.colors.secondary, borderColor: theme.colors.outline, marginTop: 10 }]}
+              onPress={() => {
+                const url = `${SERVER_URL}/drawing_interface`;
+                if (Platform.OS === 'web') {
+                  window.open(url, '_blank');
+                } else {
+                  Linking.openURL(url);
+                }
+              }}
+              disabled={!isStreamActive}
+            >
+              <Text style={[styles.controlButtonText, { color: theme.colors.onSurface }]}>Open Drawing Interface</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.controlButton, { backgroundColor: theme.colors.primary, borderColor: theme.colors.outline, marginTop: 10 }]}
+              onPress={() => {
+                const url = `${SERVER_URL}/simple_drawing`;
+                if (Platform.OS === 'web') {
+                  window.open(url, '_blank');
+                } else {
+                  Linking.openURL(url);
+                }
+              }}
+              disabled={!isStreamActive}
+            >
+              <Text style={[styles.controlButtonText, { color: theme.colors.onSurface }]}>Open Simple Drawing</Text>
+            </TouchableOpacity>
+        </View>
+
         {/* Stream Access */}
         <View style={[styles.accessSection, { borderBottomColor: theme.colors.outline }]}>
           <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>Access Video Stream</Text>
@@ -255,6 +384,41 @@ export default function YoloCamera() {
             <Text style={[styles.accessButtonText, { color: theme.colors.onSurface }]}>Open Web Interface</Text>
             <Text style={[styles.accessButtonSubtext, { color: theme.colors.onSurfaceVariant }]}>Full control panel with video</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Detection Statistics */}
+        <View style={[styles.infoSection, { borderBottomColor: theme.colors.outline }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>Detection Statistics</Text>
+          <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+            <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>Objects Detected:</Text>
+            <Text style={[styles.infoValue, { color: theme.colors.primary }]}>{detectionStats.objectCount}</Text>
+          </View>
+          <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+            <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>ROI Shapes:</Text>
+            <Text style={[styles.infoValue, { color: theme.colors.secondary }]}>{detectionStats.roiCount}</Text>
+          </View>
+          {detectionStats.roiAlertTriggered && (
+            <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+              <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>Alert Status:</Text>
+              <Text style={[styles.infoValue, { color: theme.colors.error }]}>🚨 Person in ROI!</Text>
+            </View>
+          )}
+          {detectionStats.selectedRoiShape && (
+            <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+              <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>Selected Shape:</Text>
+              <Text style={[styles.infoValue, { color: theme.colors.onSurface }]}>
+                {detectionStats.selectedRoiShape}
+              </Text>
+            </View>
+          )}
+          {detectionStats.detectedObjects.length > 0 && (
+            <View style={[styles.infoRow, { borderBottomColor: theme.colors.outline }]}>
+              <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>Objects:</Text>
+              <Text style={[styles.infoValue, { color: theme.colors.onSurface }]}>
+                {detectionStats.detectedObjects.join(', ')}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Server Information */}
@@ -285,9 +449,22 @@ export default function YoloCamera() {
           <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>How to Use</Text>
           <Text style={[styles.instructionText, { color: theme.colors.onSurfaceVariant }]}>
             1. Press "Start Stream" to begin video processing{'\n'}
-            2. Use "Open Video Feed" to view the stream{'\n'}
-            3. Use "Open Web Interface" for full control{'\n'}
-            4. Press "Stop Stream" when finished
+            2. Enable ROI detection to start monitoring{'\n'}
+            3. Click "Open Drawing Interface" to access the web-based drawing tool{'\n'}
+            4. Select a shape type (Rectangle, Triangle, Polygon, Circle){'\n'}
+            5. Draw shapes on the video stream by clicking and dragging{'\n'}
+            6. When a person enters any drawn shape, an alert will be triggered{'\n'}
+            7. Use the web interface to undo shapes or clear all shapes{'\n'}
+            8. Monitor detection statistics in real-time{'\n'}
+            9. Press "Stop Stream" when finished
+          </Text>
+          <Text style={[styles.instructionText, { color: theme.colors.onSurfaceVariant, marginTop: 10 }]}>
+            <Text style={{ fontWeight: 'bold' }}>Drawing Interface Features:</Text>{'\n'}
+            • Interactive shape drawing with real-time preview{'\n'}
+            • Multiple shape types: Rectangle, Triangle, Polygon, Circle{'\n'}
+            • Undo last shape or clear all shapes{'\n'}
+            • Visual feedback when humans enter ROI boundaries{'\n'}
+            • Responsive design that works on desktop and mobile
           </Text>
         </View>
       </ScrollView>

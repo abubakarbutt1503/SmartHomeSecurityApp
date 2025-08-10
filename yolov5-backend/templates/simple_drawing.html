@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Camera - Simple Drawing Interface</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .video-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        #videoStream {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #333;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+        }
+        
+        .shape-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .shape-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background-color: #444;
+            color: white;
+        }
+        
+        .shape-btn:hover {
+            background-color: #666;
+        }
+        
+        .shape-btn.active {
+            background-color: #007bff;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-warning {
+            background-color: #ffc107;
+            color: black;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .status {
+            padding: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .instructions {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YOLO Camera - Simple Drawing Interface</h1>
+        
+        <div class="alert" id="alertBox"></div>
+        
+        <div class="instructions">
+            <h3>How to Use:</h3>
+            <ol>
+                <li><strong>Select a shape:</strong> Click on one of the shape buttons below</li>
+                <li><strong>Draw on video:</strong> Click and drag directly on the video stream to draw shapes</li>
+                <li><strong>Shape buttons on video:</strong> You can also click the shape buttons that appear on the video stream</li>
+                <li><strong>Manage shapes:</strong> Use the action buttons to undo or clear shapes</li>
+                <li><strong>Detection:</strong> When a person enters any drawn shape, an alert will be triggered</li>
+            </ol>
+        </div>
+        
+        <div class="controls">
+            <div class="shape-buttons">
+                <button class="shape-btn" data-shape="rectangle">Rectangle</button>
+                <button class="shape-btn" data-shape="triangle">Triangle</button>
+                <button class="shape-btn" data-shape="polygon">Polygon</button>
+                <button class="shape-btn" data-shape="circle">Circle</button>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="action-btn btn-warning" id="undoBtn">Undo Last Shape</button>
+                <button class="action-btn btn-danger" id="clearBtn">Clear All Shapes</button>
+                <button class="action-btn btn-success" id="refreshBtn">Refresh Video</button>
+            </div>
+            
+            <div class="status">
+                <strong>Status:</strong> <span id="statusText">Ready</span> | 
+                <strong>Selected Shape:</strong> <span id="selectedShape">None</span> | 
+                <strong>Shapes Drawn:</strong> <span id="shapesCount">0</span>
+            </div>
+        </div>
+        
+        <div class="video-container">
+            <img id="videoStream" src="/video_feed" alt="Video Stream">
+        </div>
+    </div>
+
+    <script>
+        let selectedShape = null;
+        let shapes = [];
+        
+        const videoStream = document.getElementById('videoStream');
+        
+        // Shape buttons
+        document.querySelectorAll('.shape-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const shape = btn.dataset.shape;
+                selectShape(shape);
+            });
+        });
+        
+        // Action buttons
+        document.getElementById('undoBtn').addEventListener('click', undoLastShape);
+        document.getElementById('clearBtn').addEventListener('click', clearAllShapes);
+        document.getElementById('refreshBtn').addEventListener('click', refreshVideo);
+        
+        // Mouse events for drawing directly on video
+        videoStream.addEventListener('mousedown', handleMouseDown);
+        videoStream.addEventListener('mousemove', handleMouseMove);
+        videoStream.addEventListener('mouseup', handleMouseUp);
+        
+        function selectShape(shape) {
+            selectedShape = shape;
+            document.querySelectorAll('.shape-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-shape="${shape}"]`).classList.add('active');
+            document.getElementById('selectedShape').textContent = shape;
+            
+            // Send to backend
+            fetch('/roi_detection/select_shape', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ shape_type: shape })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`Selected ${shape} shape`, 'success');
+                } else {
+                    showAlert(`Failed to select shape: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error selecting shape:', error);
+                showAlert('Error selecting shape', 'error');
+            });
+        }
+        
+        function handleMouseDown(e) {
+            if (!selectedShape) {
+                showAlert('Please select a shape first!', 'error');
+                return;
+            }
+            
+            const rect = videoStream.getBoundingClientRect();
+            const scaleX = videoStream.naturalWidth / rect.width;
+            const scaleY = videoStream.naturalHeight / rect.height;
+            const x = Math.round((e.clientX - rect.left) * scaleX);
+            const y = Math.round((e.clientY - rect.top) * scaleY);
+            
+            // Send mousedown event to backend
+            sendDrawEvent('mousedown', x, y);
+        }
+        
+        function handleMouseMove(e) {
+            if (!selectedShape) return;
+            
+            const rect = videoStream.getBoundingClientRect();
+            const scaleX = videoStream.naturalWidth / rect.width;
+            const scaleY = videoStream.naturalHeight / rect.height;
+            const x = Math.round((e.clientX - rect.left) * scaleX);
+            const y = Math.round((e.clientY - rect.top) * scaleY);
+            
+            // Send mousemove event to backend
+            sendDrawEvent('mousemove', x, y);
+        }
+        
+        function handleMouseUp(e) {
+            if (!selectedShape) return;
+            
+            const rect = videoStream.getBoundingClientRect();
+            const scaleX = videoStream.naturalWidth / rect.width;
+            const scaleY = videoStream.naturalHeight / rect.height;
+            const x = Math.round((e.clientX - rect.left) * scaleX);
+            const y = Math.round((e.clientY - rect.top) * scaleY);
+            
+            // Send mouseup event to backend
+            sendDrawEvent('mouseup', x, y);
+            
+            // Update shapes count
+            updateShapesCount();
+        }
+        
+        function sendDrawEvent(eventType, x, y) {
+            console.log(`Sending draw event: ${eventType} at (${x}, ${y})`);
+            fetch('/roi_detection/draw_event', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    event_type: eventType,
+                    x: Math.round(x),
+                    y: Math.round(y)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Draw event failed:', data.message);
+                } else {
+                    console.log('Draw event successful');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending draw event:', error);
+            });
+        }
+        
+        function undoLastShape() {
+            fetch('/roi_detection/undo', {
+                method: 'POST'
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Last shape removed', 'success');
+                    updateShapesCount();
+                } else {
+                    showAlert(`Failed to undo: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error undoing shape:', error);
+                showAlert('Error undoing shape', 'error');
+            });
+        }
+        
+        function clearAllShapes() {
+            fetch('/roi_detection/clear', {
+                method: 'POST'
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('All shapes cleared', 'success');
+                    updateShapesCount();
+                } else {
+                    showAlert(`Failed to clear: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing shapes:', error);
+                showAlert('Error clearing shapes', 'error');
+            });
+        }
+        
+        function refreshVideo() {
+            videoStream.src = '/video_feed?' + new Date().getTime();
+        }
+        
+        function updateShapesCount() {
+            // Get current shapes count from server
+            fetch('/roi_detection/shapes')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('shapesCount').textContent = data.shapes.length;
+                }
+            })
+            .catch(error => {
+                console.error('Error getting shapes count:', error);
+            });
+        }
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type}`;
+            alertBox.style.display = 'block';
+            
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Update shapes count periodically
+        setInterval(updateShapesCount, 2000);
+        
+        // Initial status check
+        updateShapesCount();
+    </script>
+</body>
+</html>

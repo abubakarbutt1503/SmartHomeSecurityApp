@@ -4,7 +4,7 @@ Flask server for YOLO video stream
 This server provides a web interface for the video stream that can be accessed by the React Native app
 """
 
-from flask import Flask, Response, render_template_string, jsonify
+from flask import Flask, Response, render_template_string, jsonify, render_template
 from flask_cors import CORS
 from videostream import YOLOVideoStream
 import cv2
@@ -335,16 +335,190 @@ def stop_stream():
 @app.route('/status')
 def get_status():
     """Get current stream status"""
-    global is_streaming
-    return jsonify({
+    global is_streaming, stream
+    status_data = {
         'is_streaming': is_streaming,
         'timestamp': time.time()
-    })
+    }
+    
+    if stream and is_streaming:
+        # Add detection results
+        detections = stream.get_detection_results()
+        roi_results = stream.get_roi_results()
+        roi_status = stream.get_roi_status()
+        status_data.update({
+            'object_count': len(detections),
+            'roi_count': roi_status['shapes_count'],
+            'detected_objects': [d['class_name'] for d in detections],
+            'roi_alert_triggered': roi_status['alert_triggered'],
+            'selected_roi_shape': roi_status['selected_shape']
+        })
+    
+    return jsonify(status_data)
 
 @app.route('/health')
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'timestamp': time.time()})
+
+@app.route('/roi_detection/enable', methods=['POST'])
+def enable_roi_detection():
+    """Enable ROI detection"""
+    global stream
+    try:
+        if stream:
+            stream.set_roi_detection_enabled(True)
+            return jsonify({'success': True, 'message': 'ROI detection enabled'})
+        else:
+            return jsonify({'success': False, 'message': 'No active stream'})
+    except Exception as e:
+        logger.error(f"Error enabling ROI detection: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/roi_detection/disable', methods=['POST'])
+def disable_roi_detection():
+    """Disable ROI detection"""
+    global stream
+    try:
+        if stream:
+            stream.set_roi_detection_enabled(False)
+            return jsonify({'success': True, 'message': 'ROI detection disabled'})
+        else:
+            return jsonify({'success': False, 'message': 'No active stream'})
+    except Exception as e:
+        logger.error(f"Error disabling ROI detection: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/roi_detection/clear_shapes', methods=['POST'])
+def clear_roi_shapes():
+    """Clear all ROI shapes"""
+    global stream
+    try:
+        if stream:
+            stream.clear_roi_shapes()
+            return jsonify({'success': True, 'message': 'All ROI shapes cleared'})
+        else:
+            return jsonify({'success': False, 'message': 'No active stream'})
+    except Exception as e:
+        logger.error(f"Error clearing ROI shapes: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/roi_detection/remove_last_shape', methods=['POST'])
+def remove_last_roi_shape():
+    """Remove the last drawn ROI shape"""
+    global stream
+    try:
+        if stream:
+            stream.remove_last_roi_shape()
+            return jsonify({'success': True, 'message': 'Last ROI shape removed'})
+        else:
+            return jsonify({'success': False, 'message': 'No active stream'})
+    except Exception as e:
+        logger.error(f"Error removing last ROI shape: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/roi_detection/select_shape', methods=['POST'])
+def select_roi_shape():
+    """Select the type of shape to draw"""
+    try:
+        from flask import request
+        data = request.get_json()
+        shape_type = data.get('shape_type')
+        if shape_type in ['rectangle', 'triangle', 'polygon', 'circle']:
+            stream.set_selected_roi_shape(shape_type)
+            return jsonify({'success': True, 'message': f'Selected shape: {shape_type}'})
+        else:
+            return jsonify({'success': False, 'message': 'Invalid shape type'}), 400
+    except Exception as e:
+        logger.error(f"Error selecting ROI shape: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/roi_detection/draw_event', methods=['POST'])
+def handle_draw_event():
+    """Handle drawing events (mouse down, move, up)"""
+    try:
+        from flask import request
+        data = request.get_json()
+        event_type = data.get('event_type')  # 'mousedown', 'mousemove', 'mouseup'
+        x = data.get('x')
+        y = data.get('y')
+        
+        logger.info(f"Received draw event: {event_type} at ({x}, {y})")
+        
+        if event_type and x is not None and y is not None:
+            if stream:
+                stream.handle_roi_draw_event(event_type, x, y)
+                logger.info(f"Processed draw event: {event_type}")
+                return jsonify({'success': True})
+            else:
+                return jsonify({'success': False, 'message': 'No active stream'}), 400
+        else:
+            return jsonify({'success': False, 'message': 'Missing required parameters'}), 400
+    except Exception as e:
+        logger.error(f"Error handling draw event: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/roi_detection/undo', methods=['POST'])
+def undo_last_shape():
+    """Remove the last drawn shape"""
+    try:
+        stream.remove_last_roi_shape()
+        return jsonify({'success': True, 'message': 'Last shape removed'})
+    except Exception as e:
+        logger.error(f"Error undoing last shape: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/roi_detection/clear', methods=['POST'])
+def clear_all_shapes():
+    """Clear all drawn shapes"""
+    try:
+        stream.clear_roi_shapes()
+        return jsonify({'success': True, 'message': 'All shapes cleared'})
+    except Exception as e:
+        logger.error(f"Error clearing all shapes: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/roi_detection/shapes', methods=['GET'])
+def get_shapes():
+    """Get current shapes for drawing preview"""
+    try:
+        shapes = stream.get_roi_shapes()
+        return jsonify({'success': True, 'shapes': shapes})
+    except Exception as e:
+        logger.error(f"Error getting shapes: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/drawing_interface')
+def drawing_interface():
+    """Serve the interactive drawing interface"""
+    return render_template('drawing_interface.html')
+
+@app.route('/simple_drawing')
+def simple_drawing():
+    """Serve the simple drawing interface"""
+    return render_template('simple_drawing.html')
+
+@app.route('/detections')
+def get_detections():
+    """Get current detection results"""
+    global stream
+    try:
+        if stream and is_streaming:
+            detections = stream.get_detection_results()
+            roi_results = stream.get_roi_results()
+            roi_status = stream.get_roi_status()
+            return jsonify({
+                'success': True,
+                'objects': detections,
+                'roi_results': roi_results,
+                'roi_status': roi_status,
+                'timestamp': time.time()
+            })
+        else:
+            return jsonify({'success': False, 'message': 'No active stream'})
+    except Exception as e:
+        logger.error(f"Error getting detections: {e}")
+        return jsonify({'success': False, 'message': str(e)})
 
 if __name__ == '__main__':
     logger.info("Starting YOLO Video Stream Flask Server...")
